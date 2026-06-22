@@ -46,13 +46,12 @@ Components (identical names/responsibilities in both languages unless noted):
 | Auth Injector | add credentials from env; never model-visible |
 | Audit Logger | structured JSONL; never stdout |
 | MCP Server | stdio wiring (tools only) |
-| OpenAPI Generator | OpenAPI → *draft* config. **Dev-time tooling, Node only** (see §2.1) |
+| OpenAPI Generator | OpenAPI → *draft* config. **Both languages** (part of the parity surface) |
 
-### 2.1 Generator is single-implementation (scoping decision)
-The OpenAPI→config generator is build-time tooling whose output (a draft config) is
-consumed identically by both runtimes. Implementing it twice buys nothing and breaks
-DRY, so it lives **only in Node**. The *runtime proxy* is the parity surface. (Spec
-§15 reflects this.)
+### 2.1 Generator has parity too
+The OpenAPI→config generator is implemented in **both** languages and held to the
+same structural-equivalence contract (§13) via shared fixtures — same OpenAPI in,
+same draft config out. (Spec §15 reflects this.)
 
 ## 3. Repository structure
 
@@ -71,10 +70,10 @@ Drawbridge/
 ├── proofs/                   # COMMITTED evidence per feature (see §6)
 ├── scratchpad/               # temp scripts/queries — GITIGNORED, never relied on
 └── src/
-    ├── node/                 # TypeScript implementation (+ generator)
+    ├── node/                 # TypeScript implementation
     │   └── src/{config,tools,exec,audit,mcp,generate}/  test/{unit,conformance}/
     └── dotnet/               # C# implementation
-        ├── src/Drawbridge.Core/   {Config,Tools,Exec,Audit}/
+        ├── src/Drawbridge.Core/   {Config,Tools,Exec,Audit,Generate}/
         ├── src/Drawbridge.Cli/    # stdio MCP host entry point
         └── test/{Drawbridge.Tests, Drawbridge.Conformance}/
 ```

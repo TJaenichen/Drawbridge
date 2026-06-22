@@ -261,9 +261,9 @@ name are asserted separately.
 
 ## 15. OpenAPI → config generation (in v1 — #18)
 
-- **Single implementation (Node only).** This is build-time tooling; its output (a
-  draft config) is consumed identically by both runtimes, so it is *not* duplicated
-  in .NET. The runtime proxy is the parity surface, not the generator.
+- **Implemented in both languages** (Node + .NET). The generator is part of the
+  parity surface: given the same OpenAPI input it must produce structurally
+  equivalent draft configs (§13), proven by shared fixtures.
 - **CLI:** `drawbridge generate --from <openapi> --out <config> [--platform <key>]`.
 - **Behavior:** emit a **draft** config containing *all* operations, each with a
   `# review` marker; the human **prunes** to the allowlist (curation *is* the
