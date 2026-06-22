@@ -60,8 +60,20 @@ src/
 
 ## Status
 
-Early. Scaffolding first; a minimal end-to-end slice (config → typed tools →
-GitHub API, with an OpenAPI-mock-backed eval harness) is the first milestone.
+**v1 complete.** Both implementations are built, tested, and proven at parity:
+
+- **Node** (`src/node`) — 57 tests (`corepack pnpm test`).
+- **.NET** (`src/dotnet`) — 19 conformance + 18 unit tests (`dotnet test`).
+- **Shared golden fixtures** (`specs/fixtures`) run in *both* languages — tool
+  generation, request building, config validation, and OpenAPI generation all compared
+  structurally (DESIGN §13).
+- **Proofs** (`proofs/`): config-schema validation; the Node runtime end-to-end over
+  stdio; cross-language parity (both servers driven by the same MCP client →
+  structurally identical results); generator parity; demo configs.
+- **Demos** (`demo/`): GitHub (reproducible) and Gitea (private-network, Docker).
+
+Deferred to v2 (see DESIGN §21): the React monitor, response field-filtering, OAuth,
+the `raw_request` escape hatch, and per-user identity.
 
 ## Security model (sketch)
 
@@ -75,4 +87,4 @@ See [`docs/`](docs) for the fuller threat model.
 
 ## License
 
-TBD (intended open source).
+[MIT](LICENSE).
