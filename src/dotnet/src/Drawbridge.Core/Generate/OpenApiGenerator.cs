@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -13,14 +14,38 @@ public static partial class OpenApiGenerator
     [GeneratedRegex("([a-z0-9])([A-Z])")]
     private static partial Regex CamelBoundary();
 
-    private static string Snake(string s) =>
-        CamelBoundary().Replace(s, "$1_$2").Replace(" ", "_").Replace("-", "_").ToLowerInvariant();
+    [GeneratedRegex(@"[\s-]+")]
+    private static partial Regex WhitespaceHyphen();
+
+    [GeneratedRegex("[^a-z0-9_]+")]
+    private static partial Regex NonIdentifier();
+
+    [GeneratedRegex(@"^(https?://|\$\{)[^@\s]+$")]
+    private static partial Regex BaseUrlRe();
+
+    /// <summary>Always yields a valid identifier (mirrors the Node snake()).</summary>
+    private static string Snake(string s)
+    {
+        var t = CamelBoundary().Replace(s, "$1_$2");
+        t = WhitespaceHyphen().Replace(t, "_").ToLowerInvariant();
+        t = NonIdentifier().Replace(t, "_");
+        return t.Trim('_');
+    }
+
+    private static string? Str(JsonNode? n) =>
+        n is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>() : null;
+
+    private static string? NonEmpty(JsonNode? n) => Str(n) is { } s && s.Trim().Length > 0 ? s : null;
+
+    private static bool BoolTrue(JsonNode? n) => n is JsonValue v && v.GetValueKind() == JsonValueKind.True;
 
     private static JsonObject Resolve(JsonNode? schema, JsonObject root)
     {
         if (schema is JsonObject o && o["$ref"] is { } refNode)
         {
-            var parts = refNode.GetValue<string>().TrimStart('#', '/').Split('/');
+            var refStr = refNode.GetValue<string>();
+            var pointer = refStr.StartsWith("#/", StringComparison.Ordinal) ? refStr[2..] : refStr;
+            var parts = pointer.Split('/');
             JsonNode? node = root;
             foreach (var p in parts) node = node?[p];
             return node?.AsObject() ?? [];
@@ -71,38 +96,42 @@ public static partial class OpenApiGenerator
         if (type == "http" && sc == "basic")
             return new JsonObject { ["type"] = "basic", ["username_env"] = $"{baseName}_USER", ["password_env"] = $"{baseName}_PASS" };
         if (type == "apiKey" && inn == "header")
-            return new JsonObject { ["type"] = "header", ["name"] = scheme["name"]!.GetValue<string>(), ["secret_env"] = $"{baseName}_KEY" };
+            return new JsonObject { ["type"] = "header", ["name"] = Str(scheme["name"]) ?? "X-Api-Key", ["secret_env"] = $"{baseName}_KEY" };
         return new JsonObject { ["type"] = "bearer", ["secret_env"] = $"{baseName}_TOKEN" };
     }
 
     /// <summary>Generate a draft Drawbridge config object from an OpenAPI document.</summary>
     public static JsonObject Generate(JsonObject openapi, string platformKey)
     {
-        var baseUrl = openapi["servers"]?[0]?["url"]?.GetValue<string>() ?? "${BASE_URL}";
+        var serverUrl = Str(openapi["servers"]?[0]?["url"]);
+        // Only use a server URL the schema would accept; otherwise emit the editable sentinel.
+        var baseUrl = serverUrl is not null && BaseUrlRe().IsMatch(serverUrl) ? serverUrl : "${BASE_URL}";
         var auth = AuthFromSchemes(openapi["components"]?["securitySchemes"]?.AsObject());
 
         var operations = new JsonArray();
         foreach (var (path, item) in openapi["paths"]?.AsObject() ?? [])
         {
-            var itemObj = item!.AsObject();
+            if (item is not JsonObject itemObj) continue;
             foreach (var method in Methods)
             {
                 if (itemObj[method] is not JsonObject op) continue;
-                var name = Snake(op["operationId"]?.GetValue<string>() ?? $"{method}_{path}");
-                var description = op["summary"]?.GetValue<string>() ?? op["description"]?.GetValue<string>() ?? $"TODO: describe {name}";
+                var name = Snake(Str(op["operationId"]) ?? $"{method}_{path}");
+                var description = NonEmpty(op["summary"]) ?? NonEmpty(op["description"]) ?? $"TODO: describe {name}";
 
                 var prms = new JsonArray();
                 foreach (var p in op["parameters"]?.AsArray() ?? [])
                 {
-                    var po = p!.AsObject();
-                    prms.Add(MapParam(po["name"]!.GetValue<string>(), po["in"]!.GetValue<string>(),
-                        Resolve(po["schema"], openapi), po["required"]?.GetValue<bool>() == true, openapi));
+                    if (p is not JsonObject po) continue;
+                    var pname = Str(po["name"]);
+                    var pin = Str(po["in"]);
+                    if (pname is null || pin is null) continue; // skip malformed parameter
+                    prms.Add(MapParam(pname, pin, Resolve(po["schema"], openapi), BoolTrue(po["required"]), openapi));
                 }
                 var bodySchema = Resolve(op["requestBody"]?["content"]?["application/json"]?["schema"], openapi);
                 var reqd = bodySchema["required"]?.AsArray();
                 foreach (var (propName, propSchema) in bodySchema["properties"]?.AsObject() ?? [])
                 {
-                    var required = reqd?.Any(x => x!.GetValue<string>() == propName) == true;
+                    var required = reqd?.Any(x => Str(x) == propName) == true;
                     prms.Add(MapParam(propName, "body", Resolve(propSchema, openapi), required, openapi));
                 }
 

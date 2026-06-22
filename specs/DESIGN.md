@@ -1,13 +1,13 @@
 # Drawbridge — Design Specification
 
-**Status:** draft v0.1 · **Audience:** implementers (Node + .NET) · **Source of truth** for behavior and the cross-language parity contract.
+**Status:** v1.0 — accepted (shipped) · **Audience:** implementers (Node + .NET) · **Source of truth** for behavior and the cross-language parity contract.
 
 > A declarative, secure bridge that lets cloud AI agents reach the APIs inside a
 > private network — on your terms. One spec, one config, one eval harness, two
 > implementations that behave identically.
 
-Items marked **[PROPOSED]** are my recommendation pending your confirmation (see
-§19). Items marked **[v2]** are specified here but deliberately not implemented in v1.
+§19 records the decisions taken during the build. Items marked **[v2]** are specified
+here but deliberately not implemented in v1.
 
 ---
 
@@ -286,13 +286,20 @@ name are asserted separately.
   parity surface: given the same OpenAPI input it must produce structurally
   equivalent draft configs (§13), proven by shared fixtures.
 - **CLI:** `drawbridge generate --from <openapi> --out <config> [--platform <key>]`.
-- **Behavior:** emit a **draft** config containing *all* operations, each with a
-  `# review` marker; the human **prunes** to the allowlist (curation *is* the
-  security boundary — never auto-expose everything).
-- **Mapping:** `operationId` → `operation.name`; `summary`/`description` → required
-  `description`; parameters + requestBody → flattened `params`; `securityScheme` →
-  an auth stub the human completes. Unsupported constructs (nested bodies, oneOf,
-  etc.) are emitted as commented TODOs, never silently dropped.
+- **Output:** a **draft config as JSON** containing *all* operations; the human
+  **prunes** to the intended allowlist (curation *is* the security boundary — never
+  auto-expose everything). Output is JSON (not commented YAML), so review happens on
+  the structured object, not via inline markers.
+- **Mapping:** `operationId` → `operation.name` (sanitised to a valid identifier;
+  missing id falls back to `method_path`); non-empty `summary`/`description` → required
+  `description`, else a `TODO: describe …` placeholder; `servers[0].url` → `base_url`
+  (or the `${BASE_URL}` sentinel when the URL is relative/absent); parameters +
+  JSON `requestBody` → flattened `params`; `securityScheme` → an auth stub the human
+  completes (env-var names are placeholders).
+- **Guarantee:** the draft always validates against the schema.
+- **Unsupported constructs** (nested-object body properties, `oneOf`, etc.) **fall back
+  to `type: string`** in the draft — a deliberate, documented coercion the human
+  corrects during review. (Surfacing them as explicit diagnostics is a v2 nicety.)
 
 ## 16. Distribution & UX
 
@@ -359,7 +366,8 @@ the gitignored `scratchpad/`. Per-feature proof methods:
 | Audit log | Show the JSONL lines produced **and** that **stdout is clean** (only MCP protocol bytes). |
 | Security invariants (§8) | One proof each — e.g. closed-world: show there is no tool able to reach an undeclared host/path. |
 | Cross-language parity | The conformance runner output: **both** implementations pass the **same** `specs/fixtures/`; commit the run report. |
-| OpenAPI generation | Input OpenAPI → generated draft config (before/after); show unsupported constructs become TODO comments, not silent drops. |
+| OpenAPI generation | Input OpenAPI → generated draft config; both languages produce the identical draft (shared `generate` fixture incl. a "messy" spec), and the draft validates. |
+| Static headers | A `request` fixture shows configured headers (e.g. `User-Agent`/`Accept`) injected before auth; conformance asserts them in both languages. |
 
 The proof step is a hard gate: if a proof is missing or inaccurate, the loop restarts
 from Plan (CLAUDE.md §4).

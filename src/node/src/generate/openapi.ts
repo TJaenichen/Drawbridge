@@ -8,8 +8,18 @@ const SCALAR = ["string", "integer", "number", "boolean"];
 const METHODS = ["get", "post", "put", "patch", "delete"];
 
 function snake(s: string): string {
-  return s.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/[\s-]+/g, "_").toLowerCase();
+  return s
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[\s-]+/g, "_")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_") // sanitize: any other char (/, {, }, …) -> _
+    .replace(/^_+|_+$/g, "");
 }
+
+const nonEmpty = (v: unknown): string | undefined =>
+  typeof v === "string" && v.trim() !== "" ? v : undefined;
+
+const BASE_URL_RE = /^(https?:\/\/|\$\{)[^@\s]+$/;
 
 function resolveSchema(schema: AnyObj | undefined, root: AnyObj): AnyObj {
   if (schema?.$ref) {
@@ -42,7 +52,7 @@ function mapParam(name: string, location: string, schema: AnyObj, required: bool
     if (items.enum) p.items.enum = items.enum;
   }
   if (required) p.required = true;
-  if (schema.default !== undefined) p.default = schema.default;
+  if (schema.default !== undefined && schema.default !== null) p.default = schema.default;
   return p;
 }
 
@@ -57,7 +67,9 @@ function authFromSchemes(schemes: AnyObj | undefined): AnyObj {
 
 /** Generate a draft Drawbridge config object from an OpenAPI document. */
 export function generateConfig(openapi: AnyObj, platformKey: string): AnyObj {
-  const baseUrl = openapi.servers?.[0]?.url ?? "${BASE_URL}";
+  const serverUrl = openapi.servers?.[0]?.url;
+  // Only use a server URL the schema would accept; otherwise emit the editable sentinel.
+  const baseUrl = typeof serverUrl === "string" && BASE_URL_RE.test(serverUrl) ? serverUrl : "${BASE_URL}";
   const auth = authFromSchemes(openapi.components?.securitySchemes);
 
   const operations: AnyObj[] = [];
@@ -66,7 +78,7 @@ export function generateConfig(openapi: AnyObj, platformKey: string): AnyObj {
       const op = (item as AnyObj)[method];
       if (!op) continue;
       const name = snake(op.operationId ?? `${method}_${path}`);
-      const description = op.summary ?? op.description ?? `TODO: describe ${name}`;
+      const description = nonEmpty(op.summary) ?? nonEmpty(op.description) ?? `TODO: describe ${name}`;
       const params: AnyObj[] = [];
       for (const p of (op.parameters ?? []) as AnyObj[]) {
         params.push(mapParam(p.name, p.in, resolveSchema(p.schema, openapi), p.required === true, openapi));

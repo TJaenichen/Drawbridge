@@ -1,0 +1,67 @@
+{
+  "$kind": "generate",
+  "description": "Generator hardening: missing operationId -> sanitized valid name, relative server url -> ${BASE_URL} sentinel, multi-word operationId snake, null default dropped, empty summary -> TODO, apiKey header auth. Draft must be valid + identical in both languages.",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": { "title": "Messy", "version": "0.1.0" },
+    "servers": [{ "url": "/api/v3" }],
+    "paths": {
+      "/widgets": {
+        "get": {
+          "summary": "   ",
+          "parameters": [{ "name": "q", "in": "query", "schema": { "type": "string" } }]
+        },
+        "post": {
+          "operationId": "create widget",
+          "summary": "Create a widget",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["name"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "count": { "type": "integer", "default": null }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "securitySchemes": { "ApiKeyAuth": { "type": "apiKey", "in": "header", "name": "X-API-Key" } }
+    }
+  },
+  "platform": "messy",
+  "expected_config": {
+    "version": 1,
+    "platforms": {
+      "messy": {
+        "base_url": "${BASE_URL}",
+        "auth": { "type": "header", "name": "X-API-Key", "secret_env": "APIKEYAUTH_KEY" },
+        "operations": [
+          {
+            "name": "get__widgets",
+            "description": "TODO: describe get__widgets",
+            "method": "GET",
+            "path": "/widgets",
+            "params": [{ "name": "q", "in": "query", "type": "string" }]
+          },
+          {
+            "name": "create_widget",
+            "description": "Create a widget",
+            "method": "POST",
+            "path": "/widgets",
+            "params": [
+              { "name": "name", "in": "body", "type": "string", "required": true },
+              { "name": "count", "in": "body", "type": "integer" }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

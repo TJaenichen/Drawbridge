@@ -6,5 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <Authors>Thorsten Jaenichen</Authors>
+    <Description>A declarative, secure bridge that exposes internal HTTP APIs to AI agents as typed, allowlisted MCP tools.</Description>
+    <RepositoryUrl>https://github.com/TJaenichen/Drawbridge</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

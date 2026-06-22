@@ -77,9 +77,9 @@
         },
         "headers": {
           "type": "object",
-          "description": "Static request headers sent on every request (e.g. User-Agent, Accept). Config-only, never model-controllable; NOT for secrets — use auth.",
+          "description": "Static request headers sent on every request (e.g. User-Agent, Accept). Config-only, never model-controllable. NOT for secrets — use auth (header values are not redacted from logs).",
           "propertyNames": { "pattern": "^[A-Za-z0-9-]+$" },
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": { "type": "string", "pattern": "^[^\\r\\n]*$" }
         },
         "auth": { "$ref": "#/$defs/auth" },
         "operations": {

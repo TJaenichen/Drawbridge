@@ -51,19 +51,32 @@ suite enforces, not a claim.
 ## Layout
 
 ```
-docs/     design notes, security model, threat model
-specs/    OpenAPI example + the declarative Drawbridge config it generates
+specs/    config schema, OpenAPI example, DESIGN.md, and the golden conformance fixtures
 src/
   node/   TypeScript implementation
   dotnet/ C# implementation
+proofs/   committed, re-runnable proofs (M0–M5)
+demo/     runnable GitHub + Gitea demos
+docs/     threat model (the full design spec lives in specs/DESIGN.md)
 ```
+
+## Quickstart
+
+```bash
+# Node
+cd src/node && corepack pnpm install && corepack pnpm test
+# .NET
+cd src/dotnet && dotnet test
+```
+
+Then run it against a real API — see [`demo/`](demo) (GitHub, or Gitea via Docker).
 
 ## Status
 
 **v1 complete.** Both implementations are built, tested, and proven at parity:
 
-- **Node** (`src/node`) — 57 tests (`corepack pnpm test`).
-- **.NET** (`src/dotnet`) — 19 conformance + 18 unit tests (`dotnet test`).
+- **Node** (`src/node`) — 58 tests (`corepack pnpm test`).
+- **.NET** (`src/dotnet`) — 20 conformance + 18 unit tests (`dotnet test`).
 - **Shared golden fixtures** (`specs/fixtures`) run in *both* languages — tool
   generation, request building, config validation, and OpenAPI generation all compared
   structurally (DESIGN §13).
@@ -80,8 +93,10 @@ the `raw_request` escape hatch, and per-user identity.
 - Outbound-only; no inbound ports opened on the network.
 - Operations are allowlisted by config; unlisted requests are refused.
 - Auth is injected by the proxy from local environment; never exposed to the model.
-- Optional `read_only` / method-allowlist flag per platform.
-- A `raw_request` escape hatch exists but is **off by default** and host-gated.
+- Optional `read_only` flag per platform (no write tools are generated).
+- There is **no** generic/raw request tool — the closed-world allowlist *is* the v1
+  guarantee. (A `raw_request` escape hatch is reserved in the schema but deliberately
+  **not built** in v1; see DESIGN §8.3.)
 
 See [`docs/`](docs) for the fuller threat model.
 
