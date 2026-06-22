@@ -31,6 +31,9 @@ TestResults/
 *.local.yml
 secrets/
 
+# ---------- Scratchpad (throwaway tooling — never tracked) ----------
+scratchpad/
+
 # ---------- Editors / OS ----------
 .idea/
 .vscode/*

@@ -261,6 +261,9 @@ name are asserted separately.
 
 ## 15. OpenAPI → config generation (in v1 — #18)
 
+- **Single implementation (Node only).** This is build-time tooling; its output (a
+  draft config) is consumed identically by both runtimes, so it is *not* duplicated
+  in .NET. The runtime proxy is the parity surface, not the generator.
 - **CLI:** `drawbridge generate --from <openapi> --out <config> [--platform <key>]`.
 - **Behavior:** emit a **draft** config containing *all* operations, each with a
   `# review` marker; the human **prunes** to the allowlist (curation *is* the
@@ -316,7 +319,31 @@ name are asserted separately.
 4. **Parity (§13).** **Structural/semantic equivalence, not byte-identical** — same
    objects and values; field order, whitespace, and formatting are out of scope.
 
-## 20. Deferred to v2+ (parking lot)
+## 20. Proof obligations
+
+Every feature ships with a re-runnable **proof** under `proofs/<id>/` + a `PROOF.md`
+(see CLAUDE.md §6). Proofs are committed; throwaway tooling to produce them lives in
+the gitignored `scratchpad/`. Per-feature proof methods:
+
+| Feature | How it's proven |
+|---------|-----------------|
+| Config load + `${ENV}` | Show a config with `${VAR}` → dump the resolved structure; show an unset var → the fail-fast error. |
+| Validation | Feed a known-bad config → capture the rejection + reason; a good one → accepted. (before/after) |
+| Tool generation | Dump the generated tool list + input schemas as JSON; assert names are `{platform}_{op}` and descriptions present. |
+| `read_only` | Diff the generated tool list with `read_only: false` vs `true` — write tools absent in the latter. |
+| Request execution | Capture the **actual outbound HTTP request** for a tool call (against the mock); show mock state **before vs after** a write (e.g. create → the item now lists). |
+| Auth injection | Show the captured request **carries** the auth header (positive), **and** grep the tool dump + audit log to show the secret is **absent** (negative). |
+| Error mapping | Drive 404/500/timeout from the mock → show the structured tool error returned. |
+| Response cap | Return a >1 MiB body → show truncation + `"truncated": true`. |
+| Audit log | Show the JSONL lines produced **and** that **stdout is clean** (only MCP protocol bytes). |
+| Security invariants (§8) | One proof each — e.g. closed-world: show there is no tool able to reach an undeclared host/path. |
+| Cross-language parity | The conformance runner output: **both** implementations pass the **same** `specs/fixtures/`; commit the run report. |
+| OpenAPI generation | Input OpenAPI → generated draft config (before/after); show unsupported constructs become TODO comments, not silent drops. |
+
+The proof step is a hard gate: if a proof is missing or inaccurate, the loop restarts
+from Plan (CLAUDE.md §4).
+
+## 21. Deferred to v2+ (parking lot)
 
 React monitor (§11) · response field filtering · OAuth · `raw_request` · per-user
 identity & attribution · server-side write confirmation · pagination · non-JSON
