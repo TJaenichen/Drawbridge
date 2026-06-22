@@ -363,5 +363,6 @@ from Plan (CLAUDE.md §4).
 
 React monitor (§11) · response field filtering · OAuth · `raw_request` · per-user
 identity & attribution · server-side write confirmation · pagination · non-JSON
-content types · remote/HTTP transport · request/response body logging · hot-reload ·
-config includes/imports.
+content types · arbitrary static request headers (e.g. `User-Agent` for GitHub) ·
+remote/HTTP transport · request/response body logging · hot-reload · config
+includes/imports.

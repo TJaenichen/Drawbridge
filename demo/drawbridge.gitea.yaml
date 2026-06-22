@@ -1,0 +1,44 @@
+# Drawbridge config for the private-network demo: a Gitea instance standing in for an
+# internal service. Drawbridge exposes ONLY these three allowlisted operations to the
+# agent; the token stays server-side. Validates against specs/drawbridge.config.schema.json.
+
+version: 1
+
+defaults:
+  timeout_ms: 30000
+
+platforms:
+  gitea:
+    base_url: ${GITEA_BASE_URL}        # e.g. http://localhost:3000 (in real use: an internal host)
+    auth:
+      type: bearer
+      secret_env: GITEA_TOKEN          # a Gitea personal access token; never seen by the model
+    read_only: false
+    operations:
+      - name: list_issues
+        description: List issues in a repository.
+        method: GET
+        path: /api/v1/repos/{owner}/{repo}/issues
+        params:
+          - { name: owner, in: path, type: string, required: true }
+          - { name: repo, in: path, type: string, required: true }
+          - { name: state, in: query, type: enum, enum: [open, closed, all], default: open }
+
+      - name: get_issue
+        description: Get a single issue by its index.
+        method: GET
+        path: /api/v1/repos/{owner}/{repo}/issues/{index}
+        params:
+          - { name: owner, in: path, type: string, required: true }
+          - { name: repo, in: path, type: string, required: true }
+          - { name: index, in: path, type: integer, required: true }
+
+      - name: create_issue
+        description: Create an issue in a repository.
+        method: POST
+        path: /api/v1/repos/{owner}/{repo}/issues
+        params:
+          - { name: owner, in: path, type: string, required: true }
+          - { name: repo, in: path, type: string, required: true }
+          - { name: title, in: body, type: string, required: true }
+          - { name: body, in: body, type: string }

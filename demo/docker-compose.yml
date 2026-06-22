@@ -1,0 +1,20 @@
+# Gitea stands in for an internal service the cloud agent normally couldn't reach.
+# For the demo we publish 3000 on localhost so it's easy to run; in a real deployment
+# Gitea would sit on a private network with no public ingress and Drawbridge would be
+# the controlled crossing (the "drawbridge over the moat").
+services:
+  gitea:
+    image: gitea/gitea:1.22
+    container_name: drawbridge-demo-gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__server__ROOT_URL=http://localhost:3000/
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - gitea-data:/data
+    restart: unless-stopped
+
+volumes:
+  gitea-data:
