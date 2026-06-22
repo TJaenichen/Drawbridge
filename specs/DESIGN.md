@@ -18,7 +18,7 @@ behind a private-network boundary, exposing them as *typed, allowlisted* MCP too
 not a raw passthrough.
 
 **Engineering goal (the showcase).** Demonstrate spec-driven, AI-orchestrated
-development: a single declarative spec produces two byte-for-byte equivalent
+development: a single declarative spec produces two behaviorally equivalent
 implementations (TypeScript + C#), proven by a shared conformance harness.
 
 **Non-goals (v1).** Multi-user identity (§8.4), OAuth flows (§7), response field
@@ -27,18 +27,18 @@ the `raw_request` escape hatch (§8.3).
 
 ## 2. v1 scope & build sequence
 
-v1 is large because parity, private-network reach, OpenAPI generation, and the
-monitor are all in. To keep it from collapsing, build in ordered milestones — each
-is independently demoable:
+v1 is large because parity, private-network reach, and OpenAPI generation are all
+in. To keep it from collapsing, build in ordered milestones — each is independently
+demoable:
 
 | Milestone | Deliverable | Demo |
 |-----------|-------------|------|
-| **M0** | Config schema (`drawbridge.config.schema.json`) + canonical-serialization rules + golden-fixture format | "the spec compiles" |
+| **M0** | Config schema (`drawbridge.config.schema.json`) + equivalence-comparison rules + golden-fixture format | "the spec compiles" |
 | **M1** | **Node**: config → typed tools → request execution → audit log, against the Prism mock | tool call creates a work item in the mock |
 | **M2** | **Shared conformance harness** (golden fixtures) running against Node | parity tests green for one impl |
-| **M3** | **.NET** implementation passing the *same* fixtures | byte-identical parity proven |
+| **M3** | **.NET** implementation passing the *same* fixtures | structural parity proven |
 | **M4** | **Private-network demo**: point both at Gitea-in-Docker (no published ports) + GitHub | the marquee story |
-| **M5** | **OpenAPI → draft config generator** + **React monitor** | spec-to-config + live audit dashboard (React) |
+| **M5** | **OpenAPI → draft config generator** | spec-to-config from `specs/openapi.example.yaml` |
 
 **Demo targets.** Deterministic CI → **Prism mock** (from `specs/openapi.example.yaml`).
 Marquee private-network → **Gitea in a Docker network with no published ports**.
@@ -106,7 +106,7 @@ platforms:
           - { name: title, in: body, type: string, required: true }
         returns:                    # [v2] field allowlist; specced, not enforced in v1
           fields: [id, state, title]
-        max_response_bytes: 65536   # v1: truncate beyond this with a notice (§9)
+        max_response_bytes: 1048576 # v1: truncate beyond this (§9); default 1 MiB
 
 raw_request:                        # [v2] reserved; MUST be absent/disabled in v1
   enabled: false
@@ -126,7 +126,7 @@ of those. **No nested objects in v1.**
 - **Description:** the operation's `description` (required — #14). Missing ⇒ fatal.
 - **Input schema:** a flat JSON Schema object built from `params` — `required` array
   from `required: true`, `enum`/`default` carried through, `array` → `{type:array,
-  items:{type:…}}`. Emitted using the canonical serialization of §13.
+  items:{type:…}}`. Compared structurally per §13.
 - **read_only:** when `true`, operations whose `method` is not `GET` are **not
   generated at all** — the write tools do not exist (#10d).
 
@@ -173,14 +173,15 @@ is intentionally *not* built.
 token per platform from the environment (the laptop/stdio model). Per-user identity
 and request attribution are **[v2]**; the schema reserves space but nothing is wired.
 
-**8.5 Write confirmation — [PROPOSED].** v1 relies on the MCP client's own
+**8.5 Write confirmation — [decided].** v1 relies on the MCP client's own
 tool-approval UI for write operations; Drawbridge reserves an optional per-operation
-`confirm: true` for a future server-side gate. (Confirm in §19.)
+`confirm: true` for a future server-side gate (**[v2]**).
 
 ## 9. Response handling
 
-- **v1:** return the upstream JSON body **as-is**, subject to `max_response_bytes` —
-  beyond the cap the body is truncated and a `"truncated": true` notice is added.
+- **v1:** return the upstream JSON body **as-is**, subject to `max_response_bytes`
+  (**default 1 MiB**, per-operation override) — beyond the cap the body is truncated
+  and a `"truncated": true` notice is added.
 - **[v2]:** `returns.fields` allowlist projects the response to named fields only
   (exfiltration control). Specced in the schema; **not enforced in v1**.
 
@@ -194,10 +195,11 @@ tool-approval UI for write operations; Drawbridge reserves an optional per-opera
   optionally **stderr**. **Never stdout** — stdout is reserved for the MCP protocol.
 - This log is the data source for the monitor (§11).
 
-## 11. Monitor (React) — [PROPOSED architecture]
+## 11. Monitor (React) — [v2]
 
-The monitor exists to (a) make the security story tangible and (b) be the React
-artifact for the Slalom showcase. Proposed shape, to keep §12 (stdio-only) intact:
+Deferred to v2 so M0–M4 + OpenAPI generation land first. Note: this is the React
+artifact for the Slalom showcase, so v1 proves TS+C# parity but the *React* piece
+arrives with the monitor. Planned shape (v2), designed to keep §12 (stdio-only) intact:
 
 - A separate subcommand — `drawbridge monitor` — starts a **loopback-only
   (127.0.0.1) read-only** web server that serves a Vite/React dashboard and streams
@@ -216,22 +218,30 @@ artifact for the Slalom showcase. Proposed shape, to keep §12 (stdio-only) inta
 - **Server metadata:** name `drawbridge`, semantic version, config `version` echoed.
 - **Errors:** returned as structured MCP tool errors (§6), never as protocol crashes.
 
-## 13. Cross-language parity contract (#15 — byte-identical)
+## 13. Cross-language parity contract (#15 — structural/semantic equivalence)
 
-Given the **same config** and the **same tool call**, both implementations MUST
-produce byte-identical:
-1. **Generated tool list** — names, descriptions, and input JSON Schemas.
-2. **Outbound HTTP request** — method, full URL (incl. query), headers *excluding*
-   the auth header, and body.
-3. **Tool result mapping** — success payload and error structure.
+Parity is about **behavior, not bytes.** Given the **same config** and the **same
+tool call**, both implementations MUST produce **structurally equivalent** output —
+the same objects with the same values. Field/key order, whitespace, and incidental
+serialization formatting are explicitly **out of scope**: as long as it deserializes
+to the same logical object, the two agree.
 
-To make byte-identity achievable across runtimes, both MUST use **canonical
-serialization**:
-- JSON object keys sorted lexicographically (UTF-8 code-unit order).
-- No insignificant whitespace; UTF-8; LF only.
-- Numbers in shortest round-trip form; booleans/null lowercase.
-- Query parameters sorted by key, then value; percent-encoding upper-hex.
-- Header names lower-cased and sorted for comparison.
+The three things that must be equivalent:
+1. **Generated tool list** — same set of tool names, the same description per tool,
+   and the same input schema *structurally* (same params, types, `required` set,
+   `enum` members, `default` values). Order-independent.
+2. **Outbound HTTP request** — same method; same URL **path**; same **query
+   parameters as a set** of key/value pairs (order-independent); same **headers as a
+   set** (excluding the auth header); same **body** compared as a **deep-equal JSON
+   object** (key order irrelevant, values must match).
+3. **Tool result mapping** — same result object (deep-equal) and the same error
+   structure (status, outcome, message).
+
+**How equivalence is checked.** The conformance runner normalizes both sides before
+comparing — deep structural equality for JSON (recursively, key-order-independent),
+sets for query params and headers, exact equality for values, methods, and the URL
+path. This normalization is a **test-time concern**; neither implementation is
+required to emit canonical output at runtime.
 
 The auth header value is excluded from comparison (it's secret); its *presence* and
 name are asserted separately.
@@ -243,7 +253,7 @@ name are asserted separately.
 - **Golden / conformance fixtures (#16):** language-neutral JSON fixtures —
   `{config, tool_call} → {expected_request, expected_result}` — in `specs/fixtures/`.
   A thin runner in each language executes them against the **Prism mock** and asserts
-  the §13 byte-identity. Shared fixtures are the parity proof; keep the runners as
+  the §13 structural equivalence. Shared fixtures are the parity proof; keep the runners as
   thin as possible so the shared surface is maximal.
 - **Mutation testing (#22):** **StrykerJS** (Node) and **Stryker.NET** (.NET), gated
   in CI with a threshold (target TBD) — especially over the validator and executor.
@@ -295,18 +305,20 @@ name are asserted separately.
 - **Dependencies:** minimal — official MCP SDK per language, a YAML parser, an HTTP
   client, a JSON Schema validator. No heavyweight frameworks in the core.
 
-## 19. Open questions (need your input before implementing)
+## 19. Resolved decisions
 
-1. **Monitor scope/transport (§11).** Confirm the loopback read-only web server +
-   WebSocket tailing the audit log — and is the monitor **v1 (M5)** or do you want it
-   parked at v2 so M0–M4 land first?
-2. **Write confirmation (§8.5).** Rely on the client's tool-approval UI for v1
-   (reserve `confirm:` for later), or do you want a server-side confirmation gate now?
-3. **Response size cap (§9).** Default `max_response_bytes` of 64 KiB with truncation —
-   right default, or different (and global vs per-operation)?
+1. **Monitor (§11).** **Deferred to v2.** v1 ships M0–M4 + OpenAPI generation; the
+   React monitor (and thus the React showcase) follows in v2.
+2. **Write confirmation (§8.5).** **No server-side gate in v1** — rely on the MCP
+   client's tool-approval UI; `confirm:` reserved for v2.
+3. **Response size cap (§9).** **Default `max_response_bytes` = 1 MiB**, per-operation
+   override; truncate beyond with a `"truncated": true` notice.
+4. **Parity (§13).** **Structural/semantic equivalence, not byte-identical** — same
+   objects and values; field order, whitespace, and formatting are out of scope.
 
 ## 20. Deferred to v2+ (parking lot)
 
-Response field filtering · OAuth · `raw_request` · per-user identity & attribution ·
-pagination · non-JSON content types · remote/HTTP transport · request/response body
-logging · hot-reload · config includes/imports.
+React monitor (§11) · response field filtering · OAuth · `raw_request` · per-user
+identity & attribution · server-side write confirmation · pagination · non-JSON
+content types · remote/HTTP transport · request/response body logging · hot-reload ·
+config includes/imports.
