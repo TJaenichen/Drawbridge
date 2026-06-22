@@ -1,0 +1,57 @@
+== Node server ==
+{
+  "tools": [
+    "internal_tracker_create_work_item",
+    "internal_tracker_get_work_item",
+    "internal_tracker_list_work_items"
+  ],
+  "before": [],
+  "created": {
+    "id": 1,
+    "state": "open",
+    "title": "Parity check",
+    "type": "task"
+  },
+  "after": [
+    {
+      "id": 1,
+      "state": "open",
+      "title": "Parity check",
+      "type": "task"
+    }
+  ],
+  "refused": {
+    "isError": true,
+    "text": "Unknown tool: internal_tracker_nuke"
+  }
+}
+
+== .NET server ==
+{
+  "tools": [
+    "internal_tracker_create_work_item",
+    "internal_tracker_get_work_item",
+    "internal_tracker_list_work_items"
+  ],
+  "before": [],
+  "created": {
+    "id": 1,
+    "state": "open",
+    "title": "Parity check",
+    "type": "task"
+  },
+  "after": [
+    {
+      "id": 1,
+      "state": "open",
+      "title": "Parity check",
+      "type": "task"
+    }
+  ],
+  "refused": {
+    "isError": true,
+    "text": "Unknown tool: internal_tracker_nuke"
+  }
+}
+
+== PARITY: OK — Node and .NET produced structurally identical results ==
