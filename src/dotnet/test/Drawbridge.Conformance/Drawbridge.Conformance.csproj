@@ -24,4 +24,11 @@
     <ProjectReference Include="..\..\src\Drawbridge.Core\Drawbridge.Core.csproj" />
   </ItemGroup>
 
+  <!-- Bundle the canonical specs (schema + fixtures + examples) into the test output so
+       the conformance fixtures are self-contained — they resolve in any working dir,
+       including a mutation-testing sandbox. -->
+  <ItemGroup>
+    <None Include="..\..\..\..\specs\**\*.*" Exclude="..\..\..\..\specs\**\DESIGN.md" Link="specs\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

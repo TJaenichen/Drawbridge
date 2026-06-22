@@ -34,6 +34,11 @@ secrets/
 # ---------- Generated bundles ----------
 src/node/schema/
 
+# ---------- Mutation testing artifacts ----------
+.stryker-tmp/
+StrykerOutput/
+reports/
+
 # ---------- Scratchpad (throwaway tooling — never tracked) ----------
 scratchpad/
 

@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "pnpm",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "testRunner": "vitest",
+  "coverageAnalysis": "perTest",
+  "inPlace": true,
+  "mutate": ["src/**/*.ts", "!src/index.ts", "!src/paths.ts", "!src/exec/http.ts"],
+  "reporters": ["progress", "clear-text"],
+  "clearTextReporter": { "maxTestsToLog": 0 },
+  "thresholds": { "high": 85, "low": 70, "break": 60 }
+}

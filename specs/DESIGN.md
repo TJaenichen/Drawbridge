@@ -276,8 +276,9 @@ name are asserted separately.
   A thin runner in each language executes them against the **Prism mock** and asserts
   the §13 structural equivalence. Shared fixtures are the parity proof; keep the runners as
   thin as possible so the shared surface is maximal.
-- **Mutation testing (#22):** **StrykerJS** (Node) and **Stryker.NET** (.NET), gated
-  in CI with a threshold (target TBD) — especially over the validator and executor.
+- **Mutation testing (#22):** **StrykerJS** (Node, 76%) and **Stryker.NET** (.NET, 61%)
+  — a manual gate (`pnpm mutation` / `dotnet stryker`) with committed break thresholds,
+  not per-push CI (it's minutes-long). See `proofs/mutation-testing`.
 - **Mock backend:** `npx @stoplight/prism mock specs/openapi.example.yaml`.
 
 ## 15. OpenAPI → config generation (in v1 — #18)

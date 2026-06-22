@@ -77,8 +77,8 @@ Then run it against a real API — see [`demo/`](demo) (GitHub, or Gitea via Doc
 
 **v1 complete.** Both implementations are built, tested, and proven at parity:
 
-- **Node** (`src/node`) — 58 tests (`corepack pnpm test`).
-- **.NET** (`src/dotnet`) — 20 conformance + 18 unit tests (`dotnet test`).
+- **Node** (`src/node`) — 58 tests (`corepack pnpm test`); **76% mutation score** (StrykerJS).
+- **.NET** (`src/dotnet`) — 20 conformance + 26 unit tests (`dotnet test`); **61% mutation score** (Stryker.NET).
 - **Shared golden fixtures** (`specs/fixtures`) run in *both* languages — tool
   generation, request building, config validation, and OpenAPI generation all compared
   structurally (DESIGN §13).

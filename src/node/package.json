@@ -4,16 +4,39 @@
   "description": "A declarative, secure bridge that exposes internal HTTP APIs to AI agents as typed, allowlisted MCP tools.",
   "license": "MIT",
   "author": "Thorsten Jaenichen",
-  "repository": { "type": "git", "url": "git+https://github.com/TJaenichen/Drawbridge.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TJaenichen/Drawbridge.git"
+  },
   "homepage": "https://github.com/TJaenichen/Drawbridge#readme",
-  "bugs": { "url": "https://github.com/TJaenichen/Drawbridge/issues" },
-  "keywords": ["mcp", "model-context-protocol", "security", "proxy", "openapi", "ai-agents"],
-  "engines": { "node": ">=20" },
+  "bugs": {
+    "url": "https://github.com/TJaenichen/Drawbridge/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "security",
+    "proxy",
+    "openapi",
+    "ai-agents"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "packageManager": "pnpm@10.30.1",
   "type": "module",
-  "bin": { "drawbridge-mcp": "dist/index.js" },
-  "files": ["dist", "schema"],
-  "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
+  "bin": {
+    "drawbridge-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "scripts": {
     "copy-schema": "node scripts/copy-schema.mjs",
     "prebuild": "node scripts/copy-schema.mjs",
@@ -21,7 +44,8 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "mutation": "stryker run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
@@ -29,6 +53,8 @@
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^8.7.1",
+    "@stryker-mutator/vitest-runner": "^8.7.1",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",

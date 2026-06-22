@@ -1,0 +1,12 @@
+{
+  "stryker-config": {
+    "project": "Drawbridge.Core.csproj",
+    "test-projects": [
+      "../../test/Drawbridge.Tests/Drawbridge.Tests.csproj",
+      "../../test/Drawbridge.Conformance/Drawbridge.Conformance.csproj"
+    ],
+    "reporters": ["progress", "cleartext"],
+    "thresholds": { "high": 80, "low": 60, "break": 50 },
+    "mutate": ["!**/Paths.cs", "!**/Http.cs"]
+  }
+}
