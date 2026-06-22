@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: Example Internal Work-Tracking API
+  description: >
+    A fictional internal API used to drive the Drawbridge config→typed-tools
+    generator and the deterministic mock used by the eval harness. This is
+    intentionally generic and contains no real or employer-specific detail.
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:4010
+    description: Local Prism mock (npx @stoplight/prism mock specs/openapi.example.yaml)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /work-items:
+    get:
+      operationId: listWorkItems
+      summary: List work items
+      parameters:
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, closed, all]
+            default: open
+      responses:
+        "200":
+          description: A page of work items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkItem"
+    post:
+      operationId: createWorkItem
+      summary: Create a work item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewWorkItem"
+      responses:
+        "201":
+          description: The created work item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkItem"
+
+  /work-items/{id}:
+    get:
+      operationId: getWorkItem
+      summary: Get a single work item by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The requested work item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkItem"
+        "404":
+          description: Not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    NewWorkItem:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          description: Short summary of the work item
+        description:
+          type: string
+        type:
+          type: string
+          enum: [task, bug, feature]
+          default: task
+
+    WorkItem:
+      allOf:
+        - $ref: "#/components/schemas/NewWorkItem"
+        - type: object
+          required: [id, state]
+          properties:
+            id:
+              type: integer
+            state:
+              type: string
+              enum: [open, closed]

@@ -1,0 +1,39 @@
+# ---------- Node / TypeScript ----------
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+coverage/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---------- .NET / C# ----------
+bin/
+obj/
+*.user
+*.suo
+.vs/
+artifacts/
+publish/
+*.nupkg
+TestResults/
+
+# ---------- Secrets / local config ----------
+.env
+.env.*
+!.env.example
+*.local.yaml
+*.local.yml
+secrets/
+
+# ---------- Editors / OS ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
