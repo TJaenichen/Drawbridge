@@ -1,0 +1,19 @@
+{
+  "$kind": "request",
+  "description": "header auth sets the configured custom header (name asserted, value never compared); no content-type on GET.",
+  "env": { "API_KEY": "dummy-secret" },
+  "config": {
+    "version": 1,
+    "platforms": {
+      "h": {
+        "base_url": "http://localhost:4010",
+        "auth": { "type": "header", "name": "X-Api-Key", "secret_env": "API_KEY" },
+        "operations": [{ "name": "ping", "description": "Ping.", "method": "GET", "path": "/ping" }]
+      }
+    }
+  },
+  "tool_call": { "name": "h_ping", "arguments": {} },
+  "stub_response": { "status": 200, "body": "{\"pong\":true}" },
+  "expected_request": { "method": "GET", "path": "/ping", "auth_header": "x-api-key" },
+  "expected_result": { "pong": true }
+}

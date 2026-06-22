@@ -1,0 +1,15 @@
+{
+  "$kind": "request",
+  "description": "list_work_items applies the state default and GETs with no body.",
+  "env": { "TRACKER_BASE_URL": "http://localhost:4010", "TRACKER_TOKEN": "dummy-token" },
+  "config_ref": "../../drawbridge.config.example.yaml",
+  "tool_call": { "name": "internal_tracker_list_work_items", "arguments": {} },
+  "stub_response": { "status": 200, "body": "[]" },
+  "expected_request": {
+    "method": "GET",
+    "path": "/work-items",
+    "query": { "state": "open" },
+    "auth_header": "authorization"
+  },
+  "expected_result": []
+}

@@ -1,0 +1,17 @@
+{
+  "$kind": "request",
+  "description": "create_work_item assembles the JSON body, applies the type default, injects bearer auth.",
+  "env": { "TRACKER_BASE_URL": "http://localhost:4010", "TRACKER_TOKEN": "dummy-token" },
+  "config_ref": "../../drawbridge.config.example.yaml",
+  "tool_call": { "name": "internal_tracker_create_work_item", "arguments": { "title": "Ship it" } },
+  "stub_response": { "status": 201, "body": "{\"id\":1,\"state\":\"open\",\"title\":\"Ship it\",\"type\":\"task\"}" },
+  "expected_request": {
+    "method": "POST",
+    "path": "/work-items",
+    "query": {},
+    "headers": { "content-type": "application/json" },
+    "auth_header": "authorization",
+    "body": { "title": "Ship it", "type": "task" }
+  },
+  "expected_result": { "id": 1, "state": "open", "title": "Ship it", "type": "task" }
+}

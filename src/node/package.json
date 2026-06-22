@@ -7,6 +7,9 @@
   "bin": { "drawbridge-mcp": "dist/index.js" },
   "files": ["dist", "schema"],
   "scripts": {
+    "copy-schema": "node scripts/copy-schema.mjs",
+    "prebuild": "node scripts/copy-schema.mjs",
+    "prepare": "node scripts/copy-schema.mjs",
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
     "test": "vitest run",

@@ -15,6 +15,18 @@ export interface Fixture {
   config_ref?: string;
   expected_tools?: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>;
   expected?: { pointer?: string; message_contains?: string };
+  tool_call?: { name: string; arguments: Record<string, unknown> };
+  stub_response?: { status: number; body: string };
+  expected_request?: {
+    method: string;
+    path: string;
+    query?: Record<string, unknown>;
+    headers?: Record<string, string>;
+    auth_header?: string;
+    body?: unknown;
+  };
+  expected_result?: unknown;
+  expected_error?: { status: number; outcome: string; message_contains?: string };
   __file: string;
 }
 

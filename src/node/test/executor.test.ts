@@ -91,4 +91,56 @@ describe("execute — response/error mapping", () => {
     expect(r.truncated).toBe(true);
     expect((r.data as string).length).toBe(100);
   });
+
+  it("maps a 302 (not auto-handled) to outcome error", async () => {
+    expect((await execute(config, byName.tracker_list!, {}, env, stub(302, ""))).outcome).toBe("error");
+  });
+
+  it("returns a structured error (not a throw) for a missing required path arg", async () => {
+    const r = await execute(config, byName.tracker_get!, {}, env, stub(200, "{}"));
+    expect(r.outcome).toBe("error");
+    expect(r.message).toMatch(/missing required argument/);
+  });
+});
+
+const single = (extra: Record<string, unknown>, opExtra: Record<string, unknown> = {}, secret = "t") =>
+  loadConfig(
+    { version: 1, ...extra, platforms: { p: { base_url: "http://x.internal", auth: { type: "bearer", secret_env: "T" }, operations: [{ name: "op", description: "d", method: "GET", path: "/p", ...opExtra }], ...((extra as any).platformExtra ?? {}) } } } as any,
+    { T: secret },
+  );
+
+describe("timeout precedence (op -> platform -> defaults -> 30000)", () => {
+  const tmo = (cfg: any) => buildRequest(cfg, generateTools(cfg)[0]!, {}, { T: "t" }).timeoutMs;
+  const build = (d?: number, p?: number, o?: number) => {
+    const op: any = { name: "op", description: "d", method: "GET", path: "/p" };
+    if (o !== undefined) op.timeout_ms = o;
+    const plat: any = { base_url: "http://x.internal", auth: { type: "bearer", secret_env: "T" }, operations: [op] };
+    if (p !== undefined) plat.timeout_ms = p;
+    const cfg: any = { version: 1, platforms: { p: plat } };
+    if (d !== undefined) cfg.defaults = { timeout_ms: d };
+    return loadConfig(cfg, { T: "t" });
+  };
+  it("operation wins", () => expect(tmo(build(1000, 2000, 3000))).toBe(3000));
+  it("platform when no operation override", () => expect(tmo(build(1000, 2000))).toBe(2000));
+  it("defaults when no op/platform", () => expect(tmo(build(1000))).toBe(1000));
+  it("30000 when nothing set", () => expect(tmo(build())).toBe(30000));
+});
+
+describe("safety details", () => {
+  it("truncates on a UTF-8 boundary — no U+FFFD replacement char", async () => {
+    const cfg = single({}, { max_response_bytes: 10 });
+    const tool = generateTools(cfg)[0]!;
+    const r = await execute(cfg, tool, {}, { T: "t" }, async () => ({ status: 200, body: "€".repeat(20) }));
+    expect(r.truncated).toBe(true);
+    expect(r.data).not.toContain("�");
+    expect(r.data).toBe("€€€"); // 10 bytes / 3 bytes-per-€ = 3 whole chars
+  });
+
+  it("redacts the configured secret from an upstream error message", async () => {
+    const cfg = single({}, {}, "supersecret");
+    const tool = generateTools(cfg)[0]!;
+    const r = await execute(cfg, tool, {}, { T: "supersecret" }, async () => ({ status: 401, body: '{"error":"invalid token supersecret"}' }));
+    expect(r.message).not.toContain("supersecret");
+    expect(r.message).toContain("[redacted]");
+  });
 });

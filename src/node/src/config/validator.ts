@@ -6,12 +6,8 @@ import { readFileSync } from "node:fs";
 // types expose it as a namespace. Normalize to a constructor.
 const Ajv2020 = (AjvModule as unknown as { default?: unknown }).default ?? AjvModule;
 import { findConfigSchemaPath } from "../paths.js";
-import {
-  ConfigError,
-  type DrawbridgeConfig,
-  type OperationConfig,
-  type PlatformConfig,
-} from "../model.js";
+import { ConfigError, type DrawbridgeConfig, type OperationConfig } from "../model.js";
+import { generatedOps, toolName } from "../tools/naming.js";
 
 let cached: ValidateFunction | undefined;
 
@@ -29,15 +25,6 @@ function schemaValidator(): ValidateFunction {
 
 const placeholders = (path: string): string[] =>
   [...path.matchAll(/\{([^}]+)\}/g)].map((m) => m[1]!);
-
-/** Tool name for a generated operation. */
-export const toolName = (platformKey: string, op: OperationConfig): string =>
-  `${platformKey}_${op.name}`;
-
-/** Operations that will be generated as tools for a platform (read_only filter). */
-export function generatedOps(platform: PlatformConfig): OperationConfig[] {
-  return platform.read_only ? platform.operations.filter((o) => o.method === "GET") : platform.operations;
-}
 
 /**
  * Validate a raw config object: JSON Schema first, then the cross-reference invariants

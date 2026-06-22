@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { loadConfig } from "../src/config/loader.js";
 import { generateTools } from "../src/tools/generator.js";
 import { execute } from "../src/exec/executor.js";
-import type { HttpClient } from "../src/exec/http.js";
-import { type Clock, buildRecord, writeAudit } from "../src/audit/logger.js";
+import { type Clock, buildRecord, defaultSink, writeAudit } from "../src/audit/logger.js";
 
 const fixedClock: Clock = { isoNow: () => "2026-01-01T00:00:00.000Z", uuid: () => "fixed-id" };
 
@@ -47,5 +49,25 @@ describe("audit logging", () => {
     // Secret confinement: the record must never carry the credential or a body.
     expect(lines[0]).not.toContain("super-secret-value");
     expect(lines[0]).not.toContain("Bearer");
+  });
+});
+
+describe("defaultSink", () => {
+  it("writes to stderr (never stdout) and appends to the audit file", () => {
+    const file = join(tmpdir(), `drawbridge-audit-${process.pid}.jsonl`);
+    rmSync(file, { force: true });
+    const errSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const outSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const sink = defaultSink({ DRAWBRIDGE_AUDIT_FILE: file });
+    sink('{"a":1}');
+    sink('{"a":2}');
+    const errCalls = errSpy.mock.calls.length;
+    const outCalls = outSpy.mock.calls.length;
+    errSpy.mockRestore();
+    outSpy.mockRestore();
+    expect(errCalls).toBe(2);
+    expect(outCalls).toBe(0);
+    expect(readFileSync(file, "utf8")).toBe('{"a":1}\n{"a":2}\n');
+    rmSync(file, { force: true });
   });
 });

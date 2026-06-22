@@ -202,10 +202,13 @@ tool-approval UI for write operations; Drawbridge reserves an optional per-opera
 
 - **Format:** one JSON object per line (JSONL). Versioned record (`v: 1`).
 - **Fields:** `ts, v, platform, operation, method, host, path, status, duration_ms,
-  outcome (ok|client_error|server_error|timeout|refused), bytes, request_id`.
-  **No secrets, no request/response bodies in v1** (bodies are [v2], opt-in).
-- **Destination:** a configurable file path (default platform-appropriate), and
-  optionally **stderr**. **Never stdout** — stdout is reserved for the MCP protocol.
+  outcome (ok|client_error|server_error|timeout|refused|error), bytes, request_id`.
+  `error` covers build/transport failures (bad argument, connection refused, a status
+  outside 2xx/4xx/5xx). **No secrets, no request/response bodies in v1** (bodies are
+  [v2], opt-in).
+- **Destination:** **stderr by default**; also appends to a file when
+  `DRAWBRIDGE_AUDIT_FILE` is set. **Never stdout** — stdout is reserved for the MCP
+  protocol. (A platform-default file path arrives with the v2 monitor, §11.)
 - This log is the data source for the monitor (§11).
 
 ## 11. Monitor (React) — [v2]

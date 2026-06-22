@@ -1,11 +1,11 @@
 drawbridge: ready (stdio)
 == generated tools ==
 internal_tracker_list_work_items, internal_tracker_get_work_item, internal_tracker_create_work_item
-{"v":1,"ts":"2026-06-22T16:50:14.576Z","platform":"internal_tracker","operation":"list_work_items","method":"GET","host":"localhost:4055","path":"/work-items","status":200,"duration_ms":72,"outcome":"ok","bytes":2,"request_id":"9a18e599-1389-4d13-afe1-7027795cabfa"}
+{"v":1,"ts":"2026-06-22T17:08:31.996Z","platform":"internal_tracker","operation":"list_work_items","method":"GET","host":"localhost:4055","path":"/work-items","status":200,"duration_ms":67,"outcome":"ok","bytes":2,"request_id":"fcd6a0b6-8954-49d1-9dae-931bcee89304"}
 
 == BEFORE: list_work_items ==
 []
-{"v":1,"ts":"2026-06-22T16:50:14.587Z","platform":"internal_tracker","operation":"create_work_item","method":"POST","host":"localhost:4055","path":"/work-items","status":201,"duration_ms":6,"outcome":"ok","bytes":72,"request_id":"9523d5d3-28ae-47f9-972a-a0622f5076b0"}
+{"v":1,"ts":"2026-06-22T17:08:32.006Z","platform":"internal_tracker","operation":"create_work_item","method":"POST","host":"localhost:4055","path":"/work-items","status":201,"duration_ms":5,"outcome":"ok","bytes":72,"request_id":"e86332c2-580b-4438-81a1-a91c85d841c0"}
 
 == create_work_item {title: 'Investigate prod timeout'} ==
 {
@@ -14,7 +14,7 @@ internal_tracker_list_work_items, internal_tracker_get_work_item, internal_track
   "title": "Investigate prod timeout",
   "type": "task"
 }
-{"v":1,"ts":"2026-06-22T16:50:14.592Z","platform":"internal_tracker","operation":"list_work_items","method":"GET","host":"localhost:4055","path":"/work-items","status":200,"duration_ms":2,"outcome":"ok","bytes":74,"request_id":"207bb497-0ab0-4eb9-bc0a-3972aa173c3e"}
+{"v":1,"ts":"2026-06-22T17:08:32.009Z","platform":"internal_tracker","operation":"list_work_items","method":"GET","host":"localhost:4055","path":"/work-items","status":200,"duration_ms":1,"outcome":"ok","bytes":74,"request_id":"892a4c08-fcfd-4c2a-ac4c-4471076230d4"}
 
 == AFTER: list_work_items ==
 [
@@ -25,7 +25,7 @@ internal_tracker_list_work_items, internal_tracker_get_work_item, internal_track
     "type": "task"
   }
 ]
-{"v":1,"ts":"2026-06-22T16:50:14.595Z","platform":"internal_tracker","operation":"get_work_item","method":"GET","host":"localhost:4055","path":"/work-items/1","status":200,"duration_ms":2,"outcome":"ok","bytes":72,"request_id":"0ec858b6-2077-416d-9d1d-8f7e76905efb"}
+{"v":1,"ts":"2026-06-22T17:08:32.012Z","platform":"internal_tracker","operation":"get_work_item","method":"GET","host":"localhost:4055","path":"/work-items/1","status":200,"duration_ms":1,"outcome":"ok","bytes":72,"request_id":"dc73ad08-629a-4895-ac95-f352f4f9fd18"}
 
 == get_work_item {id: 1} ==
 {
@@ -34,7 +34,7 @@ internal_tracker_list_work_items, internal_tracker_get_work_item, internal_track
   "title": "Investigate prod timeout",
   "type": "task"
 }
-{"v":1,"ts":"2026-06-22T16:50:14.596Z","platform":"","operation":"internal_tracker_delete_everything","method":"","host":"","path":"","status":0,"duration_ms":0,"outcome":"refused","bytes":0,"request_id":"25906d8e-cec1-4e22-9c6c-731aba2f6398"}
+{"v":1,"ts":"2026-06-22T17:08:32.014Z","platform":"","operation":"internal_tracker_delete_everything","method":"","host":"","path":"","status":0,"duration_ms":0,"outcome":"refused","bytes":0,"request_id":"4bbf47fd-4f73-4c20-a77c-3fcaf9907710"}
 
 == closed-world: undeclared tool is refused ==  (isError)
 Unknown tool: internal_tracker_delete_everything

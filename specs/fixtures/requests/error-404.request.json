@@ -1,0 +1,10 @@
+{
+  "$kind": "request",
+  "description": "A 404 upstream maps to a client_error structured tool error.",
+  "env": { "TRACKER_BASE_URL": "http://localhost:4010", "TRACKER_TOKEN": "dummy-token" },
+  "config_ref": "../../drawbridge.config.example.yaml",
+  "tool_call": { "name": "internal_tracker_get_work_item", "arguments": { "id": 99 } },
+  "stub_response": { "status": 404, "body": "{\"error\":\"not found\"}" },
+  "expected_request": { "method": "GET", "path": "/work-items/99", "auth_header": "authorization" },
+  "expected_error": { "status": 404, "outcome": "client_error" }
+}

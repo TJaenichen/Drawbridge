@@ -1,0 +1,19 @@
+{
+  "$kind": "request",
+  "description": "basic auth sets an Authorization header (value excluded from comparison).",
+  "env": { "U": "alice", "P": "s3cret" },
+  "config": {
+    "version": 1,
+    "platforms": {
+      "b": {
+        "base_url": "http://localhost:4010",
+        "auth": { "type": "basic", "username_env": "U", "password_env": "P" },
+        "operations": [{ "name": "ping", "description": "Ping.", "method": "GET", "path": "/ping" }]
+      }
+    }
+  },
+  "tool_call": { "name": "b_ping", "arguments": {} },
+  "stub_response": { "status": 200, "body": "{\"pong\":true}" },
+  "expected_request": { "method": "GET", "path": "/ping", "auth_header": "authorization" },
+  "expected_result": { "pong": true }
+}

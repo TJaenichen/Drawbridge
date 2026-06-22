@@ -37,6 +37,9 @@ in the env, and drives it via the MCP SDK client over stdio.
 
 ## Unit coverage backing this
 
-`src/node` has 27 vitest tests (config loading + `${ENV}` fail-fast, schema +
-invariant validation incl. the 3 `tools` golden fixtures, request building, response/
-error mapping, truncation, audit secret-confinement). Run `corepack pnpm test`.
+`src/node` has 53 vitest tests: config loading + `${ENV}` fail-fast, schema +
+invariant validation, the `tools` + `request` + `config_*` golden fixtures (the shared
+parity surface), auth (bearer/header/basic), request building, response/error mapping,
+timeout precedence, multibyte truncation, secret redaction, the MCP server handlers
+(ListTools/CallTool/refused) via the in-memory transport, and audit secret-confinement
++ stderr/file sink. Run `corepack pnpm test`.

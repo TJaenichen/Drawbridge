@@ -38,6 +38,16 @@
         "arguments": { "type": "object" }
       }
     },
+    "stub_response": {
+      "type": "object",
+      "required": ["status", "body"],
+      "additionalProperties": false,
+      "description": "Canned upstream response the runner's stub HTTP client returns, so request fixtures are deterministic without a live server.",
+      "properties": {
+        "status": { "type": "integer" },
+        "body": { "type": "string" }
+      }
+    },
     "expected_request": {
       "type": "object",
       "required": ["method", "path"],
@@ -58,7 +68,7 @@
       "additionalProperties": false,
       "properties": {
         "status": { "type": "integer" },
-        "outcome": { "enum": ["ok", "client_error", "server_error", "timeout", "refused"] },
+        "outcome": { "enum": ["ok", "client_error", "server_error", "timeout", "refused", "error"] },
         "message_contains": { "type": "string", "description": "Optional substring assertion on the (redacted) message." }
       }
     },

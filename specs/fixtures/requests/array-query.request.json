@@ -1,0 +1,21 @@
+{
+  "$kind": "request",
+  "description": "Array query params serialize as repeated keys (?labels=a&labels=b).",
+  "env": { "TOK": "dummy-token" },
+  "config": {
+    "version": 1,
+    "platforms": {
+      "svc": {
+        "base_url": "http://localhost:4010",
+        "auth": { "type": "bearer", "secret_env": "TOK" },
+        "operations": [
+          { "name": "search", "description": "Search.", "method": "GET", "path": "/search", "params": [{ "name": "labels", "in": "query", "type": "array", "items": { "type": "string" } }] }
+        ]
+      }
+    }
+  },
+  "tool_call": { "name": "svc_search", "arguments": { "labels": ["a", "b"] } },
+  "stub_response": { "status": 200, "body": "[]" },
+  "expected_request": { "method": "GET", "path": "/search", "query": { "labels": ["a", "b"] }, "auth_header": "authorization" },
+  "expected_result": []
+}

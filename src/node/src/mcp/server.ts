@@ -12,6 +12,8 @@ export interface ServerDeps {
   http?: HttpClient;
   sink?: AuditSink;
   clock?: Clock;
+  /** Monotonic clock for duration measurement; injectable for deterministic tests. */
+  now?: () => number;
 }
 
 const VERSION = "0.1.0";
@@ -25,7 +27,10 @@ export function createServer(config: DrawbridgeConfig, deps: ServerDeps = {}): S
   const tools = generateTools(config);
   const byName = new Map<string, GeneratedTool>(tools.map((t) => [t.name, t]));
 
-  const server = new Server({ name: "drawbridge", version: VERSION }, { capabilities: { tools: {} } });
+  const server = new Server(
+    { name: "drawbridge", version: VERSION },
+    { capabilities: { tools: {} }, instructions: `Drawbridge proxy (config version ${config.version}). Tools are typed, allowlisted proxies to internal APIs; credentials stay server-side.` },
+  );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema })),
@@ -45,7 +50,7 @@ export function createServer(config: DrawbridgeConfig, deps: ServerDeps = {}): S
       return { isError: true, content: [{ type: "text", text: `Unknown tool: ${name}` }] };
     }
 
-    const result = await execute(config, tool, args, env, http, deps.clock ? () => 0 : undefined);
+    const result = await execute(config, tool, args, env, http, deps.now);
     writeAudit(sink, buildRecord(tool.platformKey, tool.operation.name, result, deps.clock));
 
     if (result.outcome === "ok") {

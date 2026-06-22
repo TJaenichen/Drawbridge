@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Drawbridge.Cli/Drawbridge.Cli.csproj" />
+    <Project Path="src/Drawbridge.Core/Drawbridge.Core.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Drawbridge.Conformance/Drawbridge.Conformance.csproj" />
+    <Project Path="test/Drawbridge.Tests/Drawbridge.Tests.csproj" />
+  </Folder>
+</Solution>

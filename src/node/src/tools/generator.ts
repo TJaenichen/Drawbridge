@@ -5,7 +5,7 @@ import {
   type OperationConfig,
   type ParamConfig,
 } from "../model.js";
-import { generatedOps, toolName } from "../config/validator.js";
+import { generatedOps, toolName } from "./naming.js";
 
 function elementSchema(type: ElementType, members?: string[]): Record<string, unknown> {
   if (type === "enum") return { type: "string", enum: members };

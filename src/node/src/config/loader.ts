@@ -57,6 +57,14 @@ export function loadConfig(raw: unknown, env: Env): DrawbridgeConfig {
   if (missing.size > 0) {
     throw new ConfigError(`Missing required environment variable(s): ${[...missing].sort().join(", ")}`);
   }
+
+  // Re-validate base_url AFTER interpolation: the schema only saw the ${...} literal,
+  // so an env value could smuggle a bad scheme or inline userinfo (§8a defense-in-depth).
+  for (const [key, platform] of Object.entries(resolved.platforms)) {
+    if (!/^https?:\/\/[^@\s]+$/.test(platform.base_url)) {
+      throw new ConfigError(`platform "${key}": resolved base_url "${platform.base_url}" must be http(s) with no inline userinfo.`);
+    }
+  }
   return resolved;
 }
 

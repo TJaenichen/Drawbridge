@@ -1,0 +1,21 @@
+{
+  "$kind": "request",
+  "description": "Security §8a: a path param value is URL-encoded so it cannot escape the template (slash/space encoded).",
+  "env": { "TOK": "dummy-token" },
+  "config": {
+    "version": 1,
+    "platforms": {
+      "svc": {
+        "base_url": "http://localhost:4010",
+        "auth": { "type": "bearer", "secret_env": "TOK" },
+        "operations": [
+          { "name": "get_item", "description": "Get item by key.", "method": "GET", "path": "/items/{key}", "params": [{ "name": "key", "in": "path", "type": "string", "required": true }] }
+        ]
+      }
+    }
+  },
+  "tool_call": { "name": "svc_get_item", "arguments": { "key": "a/b c" } },
+  "stub_response": { "status": 200, "body": "{\"ok\":true}" },
+  "expected_request": { "method": "GET", "path": "/items/a%2Fb%20c", "auth_header": "authorization" },
+  "expected_result": { "ok": true }
+}
