@@ -90,6 +90,8 @@ platforms:
     base_url: ${VAR} | literal      # host+path is FIXED; never model-controllable
     timeout_ms: 30000               # optional override
     read_only: false                # true ⇒ non-GET operations are NOT generated
+    headers:                        # optional static headers (e.g. User-Agent, Accept);
+      User-Agent: drawbridge        #   config-only, non-secret, sent on every request
     auth:
       type: bearer | header | basic
       # bearer:  secret_env: TOKEN
@@ -150,6 +152,9 @@ validator enforces these; each has a conformance fixture):
   restricted to `in: query | body` (no array-in-path).
 - **Body:** `in: body` params assembled into a JSON object; `Content-Type:
   application/json`. (Other content types: [v2].)
+- **Headers:** a platform's static `headers` (e.g. `User-Agent`, `Accept`) are injected
+  on every request, lower-cased, *before* auth and content-type (so those win). They're
+  config-only and never model-controllable.
 - **Timeout:** `timeout_ms` (operation → platform → defaults → 30000). On timeout,
   return a structured tool error (§12).
 - **Errors (#13):** upstream 4xx/5xx → **structured MCP tool error** carrying the
@@ -363,6 +368,5 @@ from Plan (CLAUDE.md §4).
 
 React monitor (§11) · response field filtering · OAuth · `raw_request` · per-user
 identity & attribution · server-side write confirmation · pagination · non-JSON
-content types · arbitrary static request headers (e.g. `User-Agent` for GitHub) ·
-remote/HTTP transport · request/response body logging · hot-reload · config
-includes/imports.
+content types · remote/HTTP transport · request/response body logging · hot-reload ·
+config includes/imports.

@@ -1,7 +1,12 @@
-drawbridge: ready (stdio)
-Gitea config loaded + validated. Allowlisted tools the agent can see:
+
+GitHub (drawbridge.github.yaml) — config validated + loaded. Allowlisted tools:
+  - github_list_issues: List issues in a repository.
+  - github_get_issue: Get a single issue by number.
+  - github_create_issue: Create an issue in a repository.
+  => exactly 3 tools; nothing else on the API is reachable.
+
+Gitea (drawbridge.gitea.yaml) — config validated + loaded. Allowlisted tools:
   - gitea_list_issues: List issues in a repository.
   - gitea_get_issue: Get a single issue by its index.
   - gitea_create_issue: Create an issue in a repository.
-
-Exactly 3 tools exposed — nothing else on the Gitea API is reachable.
+  => exactly 3 tools; nothing else on the API is reachable.

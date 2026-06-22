@@ -70,6 +70,10 @@ public static partial class Executor
         var query = pairs.Count > 0 ? "?" + string.Join("&", pairs) : "";
 
         var headers = new Dictionary<string, string>(StringComparer.Ordinal);
+        // Static config headers (e.g. User-Agent) first; auth/content-type set below win.
+        foreach (var (k, v) in platform.Headers ?? [])
+            headers[k.ToLowerInvariant()] = v;
+
         string? body = null;
         var bodyParams = Params(tool, "body").ToList();
         if (bodyParams.Count > 0)

@@ -75,9 +75,12 @@ export function buildRequest(
   }
   const query = pairs.length ? `?${pairs.join("&")}` : "";
 
+  // Static config headers (e.g. User-Agent) first; auth/content-type set below win.
+  const headers: Record<string, string> = {};
+  for (const [k, v] of Object.entries(platform.headers ?? {})) headers[k.toLowerCase()] = v;
+
   // Body: in:body params assembled into a JSON object.
   const bodyParams = param(tool, "body");
-  const headers: Record<string, string> = {};
   let body: string | undefined;
   if (bodyParams.length) {
     const obj: Record<string, unknown> = {};

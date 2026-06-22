@@ -40,6 +40,7 @@ public sealed record PlatformConfig(
     string BaseUrl,
     [property: JsonPropertyName("timeout_ms")] int? TimeoutMs,
     bool? ReadOnly,
+    Dictionary<string, string>? Headers,
     AuthConfig Auth,
     List<OperationConfig> Operations);
 

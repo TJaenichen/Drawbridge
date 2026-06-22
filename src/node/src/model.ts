@@ -44,6 +44,8 @@ export interface PlatformConfig {
   base_url: string;
   timeout_ms?: number;
   read_only?: boolean;
+  /** Static headers (e.g. User-Agent) sent on every request; config-only, non-secret. */
+  headers?: Record<string, string>;
   auth: AuthConfig;
   operations: OperationConfig[];
 }

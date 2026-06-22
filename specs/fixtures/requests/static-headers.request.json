@@ -1,0 +1,27 @@
+{
+  "$kind": "request",
+  "description": "Static platform headers (User-Agent, Accept) are injected on the request alongside auth.",
+  "env": { "TOK": "dummy-token" },
+  "config": {
+    "version": 1,
+    "platforms": {
+      "gh": {
+        "base_url": "http://localhost:4010",
+        "headers": { "User-Agent": "drawbridge-demo", "Accept": "application/vnd.github+json" },
+        "auth": { "type": "bearer", "secret_env": "TOK" },
+        "operations": [
+          { "name": "root", "description": "Root.", "method": "GET", "path": "/" }
+        ]
+      }
+    }
+  },
+  "tool_call": { "name": "gh_root", "arguments": {} },
+  "stub_response": { "status": 200, "body": "{\"ok\":true}" },
+  "expected_request": {
+    "method": "GET",
+    "path": "/",
+    "headers": { "user-agent": "drawbridge-demo", "accept": "application/vnd.github+json" },
+    "auth_header": "authorization"
+  },
+  "expected_result": { "ok": true }
+}

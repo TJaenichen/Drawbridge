@@ -75,6 +75,12 @@
           "default": false,
           "description": "When true, non-GET operations are not generated as tools."
         },
+        "headers": {
+          "type": "object",
+          "description": "Static request headers sent on every request (e.g. User-Agent, Accept). Config-only, never model-controllable; NOT for secrets — use auth.",
+          "propertyNames": { "pattern": "^[A-Za-z0-9-]+$" },
+          "additionalProperties": { "type": "string" }
+        },
         "auth": { "$ref": "#/$defs/auth" },
         "operations": {
           "type": "array",

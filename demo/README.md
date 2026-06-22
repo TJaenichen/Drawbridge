@@ -1,56 +1,58 @@
-# Private-network demo (Gitea)
+# Demos
 
-Drawbridge lets a cloud agent (Claude Desktop / Cowork) operate a service it normally
-couldn't reach — here, a **Gitea** instance standing in for an internal tool — while
-exposing only the operations you allowlist and keeping the token server-side.
+Drawbridge lets a cloud agent (Claude Desktop / Cowork) operate an HTTP API it normally
+couldn't — exposing only the operations you allowlist and keeping the token server-side.
 
-> Gitea is the castle; the token is the key you hold; Drawbridge is the drawbridge you
-> lower for exactly three operations.
+Two configs are provided:
 
-## Run it
+- **`drawbridge.github.yaml`** — the GitHub REST API. Reproducible by anyone with a
+  token; shows static headers (GitHub requires a `User-Agent`).
+- **`drawbridge.gitea.yaml`** — a self-hosted **Gitea** standing in for an *internal*
+  service, run via Docker. The private-network story: Gitea is the castle, the token is
+  the key you hold, Drawbridge is the drawbridge you lower for exactly three operations.
+
+## GitHub (quick, reproducible)
 
 ```bash
-# 1. Start Gitea (requires Docker).
-cd demo && docker compose up -d
-# Open http://localhost:3000, complete first-run setup, create a user + a repo,
-# then Settings -> Applications -> generate a token with repo scope.
-
-# 2. Point Drawbridge at it.
-export GITEA_BASE_URL=http://localhost:3000
-export GITEA_TOKEN=<your-gitea-token>
-
-# 3a. Node:
-node ../src/node/dist/index.js --config drawbridge.gitea.yaml
-# 3b. or .NET:
-dotnet ../src/dotnet/src/Drawbridge.Cli/bin/Debug/net10.0/Drawbridge.Cli.dll --config drawbridge.gitea.yaml
+export GITHUB_TOKEN=<your-github-pat>          # repo scope
+node ../src/node/dist/index.js --config drawbridge.github.yaml
+# or: dotnet ../src/dotnet/src/Drawbridge.Cli/bin/Debug/net10.0/Drawbridge.Cli.dll --config drawbridge.github.yaml
 ```
 
-Or wire it into Claude Desktop (`claude_desktop_config.json`):
+The agent sees exactly `github_list_issues`, `github_get_issue`, `github_create_issue`.
+Drawbridge injects the required `User-Agent` (static header) and the bearer token; the
+token never enters the model.
+
+## Gitea (private-network story, requires Docker)
+
+```bash
+docker compose up -d                            # starts Gitea on http://localhost:3000
+# Open http://localhost:3000, complete setup, create a user + repo, then mint a token.
+export GITEA_BASE_URL=http://localhost:3000
+export GITEA_TOKEN=<your-gitea-token>
+node ../src/node/dist/index.js --config drawbridge.gitea.yaml
+```
+
+In a real deployment Gitea would sit on a private network with no public ingress, and
+Drawbridge would be the controlled crossing.
+
+## Wire into Claude Desktop (`claude_desktop_config.json`)
 
 ```json
 {
   "mcpServers": {
-    "gitea": {
+    "github": {
       "command": "npx",
-      "args": ["-y", "drawbridge-mcp", "--config", "/abs/path/demo/drawbridge.gitea.yaml"],
-      "env": { "GITEA_BASE_URL": "http://localhost:3000", "GITEA_TOKEN": "…" }
+      "args": ["-y", "drawbridge-mcp", "--config", "/abs/path/demo/drawbridge.github.yaml"],
+      "env": { "GITHUB_TOKEN": "…" }
     }
   }
 }
 ```
 
-The agent then sees exactly `gitea_list_issues`, `gitea_get_issue`, `gitea_create_issue`
-— nothing else on the Gitea API is reachable, and the token never enters the model.
+## What's proven without Docker / tokens
 
-## What's proven without Docker
-
-`proofs/m4-private-network` loads this config (with a dummy token) and shows the three
-allowlisted tools are generated and the config validates — so the wiring is correct
-before you ever start a container. The live container run above requires Docker.
-
-## Note on GitHub as an alternate target
-
-GitHub's API requires a `User-Agent` header on every request. Drawbridge v1 injects
-only the auth header (no arbitrary static headers), so a live GitHub target needs the
-**static-headers** feature (v2 parking lot). Gitea has no such requirement, so it's the
-v1 demo target.
+`proofs/m4-private-network` loads **both** configs (with dummy tokens) and shows each
+exposes exactly its three allowlisted tools and validates — so the wiring is correct
+before any container or live call. The static-header injection is locked by the shared
+`static-headers` golden fixture (passes in both languages).

@@ -1,0 +1,47 @@
+# Drawbridge config for the GitHub REST API — reproducible by anyone with a token.
+# GitHub requires a User-Agent on every request; Drawbridge injects it via static
+# headers (no secrets here — the token goes through auth). Validates against the schema.
+
+version: 1
+
+defaults:
+  timeout_ms: 30000
+
+platforms:
+  github:
+    base_url: https://api.github.com
+    headers:
+      User-Agent: drawbridge-mcp
+      Accept: application/vnd.github+json
+    auth:
+      type: bearer
+      secret_env: GITHUB_TOKEN          # a GitHub PAT (fine-grained or classic); never seen by the model
+    read_only: false
+    operations:
+      - name: list_issues
+        description: List issues in a repository.
+        method: GET
+        path: /repos/{owner}/{repo}/issues
+        params:
+          - { name: owner, in: path, type: string, required: true }
+          - { name: repo, in: path, type: string, required: true }
+          - { name: state, in: query, type: enum, enum: [open, closed, all], default: open }
+
+      - name: get_issue
+        description: Get a single issue by number.
+        method: GET
+        path: /repos/{owner}/{repo}/issues/{number}
+        params:
+          - { name: owner, in: path, type: string, required: true }
+          - { name: repo, in: path, type: string, required: true }
+          - { name: number, in: path, type: integer, required: true }
+
+      - name: create_issue
+        description: Create an issue in a repository.
+        method: POST
+        path: /repos/{owner}/{repo}/issues
+        params:
+          - { name: owner, in: path, type: string, required: true }
+          - { name: repo, in: path, type: string, required: true }
+          - { name: title, in: body, type: string, required: true }
+          - { name: body, in: body, type: string }

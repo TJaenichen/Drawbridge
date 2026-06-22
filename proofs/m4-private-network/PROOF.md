@@ -1,8 +1,8 @@
-# Proof — M4: private-network demo (Gitea)
+# Proof — M4: demo configs (GitHub + Gitea private-network)
 
-**Claim.** The Gitea demo config (`demo/drawbridge.gitea.yaml`) is valid and exposes
-exactly the three allowlisted operations to the agent — verifiable before any container
-is started.
+**Claim.** Both demo configs (`demo/drawbridge.github.yaml`, `demo/drawbridge.gitea.yaml`)
+are valid and each exposes exactly its three allowlisted operations to the agent —
+verifiable before any container, token, or live call.
 
 ## How to reproduce (Docker-free)
 
@@ -11,20 +11,17 @@ cd src/node && corepack pnpm install && corepack pnpm build
 cd ../../proofs/m4-private-network && corepack pnpm install && node list-tools.mjs
 ```
 
-`list-tools.mjs` starts the real Drawbridge server over stdio with the Gitea config and
-a **dummy** token, then calls `listTools`. The server reaching "ready" proves the config
-validated and loaded; `listTools` makes no upstream call.
+`list-tools.mjs` starts the real Drawbridge server over stdio with each config and a
+**dummy** token, then calls `listTools`. The server reaching "ready" proves the config
+validated and loaded (including the static `User-Agent` header GitHub requires);
+`listTools` makes no upstream call.
 
 ## Result (proof-output.txt)
 
-```
-Gitea config loaded + validated. Allowlisted tools the agent can see:
-  - gitea_list_issues: List issues in a repository.
-  - gitea_get_issue: Get a single issue by its index.
-  - gitea_create_issue: Create an issue in a repository.
-
-Exactly 3 tools exposed — nothing else on the Gitea API is reachable.
-```
+Both `github_*` and `gitea_*` configs load and expose exactly their three allowlisted
+tools (`list_issues`, `get_issue`, `create_issue`). Static-header injection (GitHub's
+`User-Agent`/`Accept`) is separately locked by the shared `static-headers` golden
+fixture, which passes in both languages.
 
 ## Live run (requires Docker — not run in this environment)
 
