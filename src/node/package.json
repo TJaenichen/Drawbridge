@@ -9,9 +9,11 @@
   "bugs": { "url": "https://github.com/TJaenichen/Drawbridge/issues" },
   "keywords": ["mcp", "model-context-protocol", "security", "proxy", "openapi", "ai-agents"],
   "engines": { "node": ">=20" },
+  "packageManager": "pnpm@10.30.1",
   "type": "module",
   "bin": { "drawbridge-mcp": "dist/index.js" },
   "files": ["dist", "schema"],
+  "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
   "scripts": {
     "copy-schema": "node scripts/copy-schema.mjs",
     "prebuild": "node scripts/copy-schema.mjs",
