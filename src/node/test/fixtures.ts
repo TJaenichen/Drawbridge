@@ -8,8 +8,12 @@ export const SPECS_DIR = resolve(here, "../../../specs");
 export const FIXTURES_DIR = resolve(SPECS_DIR, "fixtures");
 
 export interface Fixture {
-  $kind: "tools" | "request" | "config_valid" | "config_invalid";
+  $kind: "tools" | "request" | "config_valid" | "config_invalid" | "generate";
   description: string;
+  openapi?: unknown;
+  openapi_ref?: string;
+  platform?: string;
+  expected_config?: unknown;
   env?: Record<string, string>;
   config?: unknown;
   config_ref?: string;
@@ -46,4 +50,11 @@ export function fixtureConfig(fx: Fixture): unknown {
   if (fx.config !== undefined) return fx.config;
   if (fx.config_ref) return parse(resolve(dirname(fx.__file), fx.config_ref));
   throw new Error(`fixture ${fx.__file} has neither config nor config_ref`);
+}
+
+/** Resolve a generate fixture's OpenAPI doc (inline or openapi_ref). */
+export function fixtureOpenApi(fx: Fixture): unknown {
+  if (fx.openapi !== undefined) return fx.openapi;
+  if (fx.openapi_ref) return parse(resolve(dirname(fx.__file), fx.openapi_ref));
+  throw new Error(`fixture ${fx.__file} has neither openapi nor openapi_ref`);
 }

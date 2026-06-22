@@ -27,7 +27,11 @@ public sealed class FetchClient(HttpClient? http = null) : IHttpClient
             msg.Headers.TryAddWithoutValidation(k, v);
         }
         if (req.Body is not null)
-            msg.Content = new StringContent(req.Body, System.Text.Encoding.UTF8, "application/json");
+        {
+            // Bare "application/json" (no "; charset=utf-8") to match Node's fetch header.
+            msg.Content = new StringContent(req.Body, System.Text.Encoding.UTF8);
+            msg.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        }
 
         try
         {

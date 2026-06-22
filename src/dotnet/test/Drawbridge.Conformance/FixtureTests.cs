@@ -46,6 +46,22 @@ public class ConfigValidationConformance
 }
 
 [TestFixture]
+public class GenerateConformance
+{
+    private static IEnumerable<TestCaseData> Cases() =>
+        Fixtures.Load("generate").Select(fx => new TestCaseData(fx).SetName("generate: " + fx["description"]!.GetValue<string>()));
+
+    [TestCaseSource(nameof(Cases))]
+    public void Generates_expected_config(JsonObject fx)
+    {
+        var openapi = Fixtures.OpenApi(fx)!.AsObject();
+        var config = OpenApiGenerator.Generate(openapi, fx["platform"]!.GetValue<string>());
+        Assert.That(JsonEqual.DeepEquals(config, fx["expected_config"]), Is.True, () => $"actual={config.ToJsonString()}");
+        Assert.DoesNotThrow(() => ConfigValidator.Validate(config));
+    }
+}
+
+[TestFixture]
 public class RequestConformance
 {
     private static IEnumerable<TestCaseData> Cases() =>
@@ -102,6 +118,8 @@ public class RequestConformance
         {
             Assert.That(res.Status, Is.EqualTo(expErr["status"]!.GetValue<int>()));
             Assert.That(res.Outcome, Is.EqualTo(expErr["outcome"]!.GetValue<string>()));
+            if (expErr["message_contains"] is { } mc)
+                Assert.That(res.Message, Does.Contain(mc.GetValue<string>()));
         }
     }
 }

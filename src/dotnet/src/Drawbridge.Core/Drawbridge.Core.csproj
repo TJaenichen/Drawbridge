@@ -11,4 +11,12 @@
     <PackageReference Include="YamlDotNet" Version="18.0.0" />
   </ItemGroup>
 
+  <!-- Bundle the canonical config schema into the output so a published binary can
+       locate it without the repo's specs/ dir (mirrors the Node package's schema/). -->
+  <ItemGroup>
+    <None Include="..\..\..\..\specs\drawbridge.config.schema.json" Link="schema\drawbridge.config.schema.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

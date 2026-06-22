@@ -34,8 +34,8 @@ public static class JsonEqual
             if (ka != kb) return false;
             return ka switch
             {
-                JsonValueKind.Number => decimal.TryParse(a.ToJsonString(), System.Globalization.CultureInfo.InvariantCulture, out var da)
-                    && decimal.TryParse(b.ToJsonString(), System.Globalization.CultureInfo.InvariantCulture, out var db) && da == db,
+                JsonValueKind.Number => double.TryParse(a.ToJsonString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var da)
+                    && double.TryParse(b.ToJsonString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var db) && da == db,
                 JsonValueKind.String => a.GetValue<string>() == b.GetValue<string>(),
                 _ => true, // true/false/null already matched by kind
             };

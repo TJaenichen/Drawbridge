@@ -41,6 +41,15 @@ public static class Fixtures
         return path.EndsWith(".json", StringComparison.Ordinal) ? JsonNode.Parse(text) : Yaml.Parse(text);
     }
 
+    public static JsonNode? OpenApi(JsonObject fx)
+    {
+        if (fx["openapi"] is { } inline) return inline.DeepClone();
+        var rel = fx["openapi_ref"]!.GetValue<string>();
+        var path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(fx["__file"]!.GetValue<string>())!, rel));
+        var text = File.ReadAllText(path);
+        return path.EndsWith(".json", StringComparison.Ordinal) ? JsonNode.Parse(text) : Yaml.Parse(text);
+    }
+
     public static ConfigLoader.EnvLookup Env(JsonObject fx)
     {
         var e = fx["env"]?.AsObject();

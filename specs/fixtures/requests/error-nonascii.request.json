@@ -1,0 +1,10 @@
+{
+  "$kind": "request",
+  "description": "Parity: non-ASCII/HTML in an upstream error body survives unescaped in the message (no \\uXXXX).",
+  "env": { "TRACKER_BASE_URL": "http://localhost:4010", "TRACKER_TOKEN": "dummy-token" },
+  "config_ref": "../../drawbridge.config.example.yaml",
+  "tool_call": { "name": "internal_tracker_get_work_item", "arguments": { "id": 7 } },
+  "stub_response": { "status": 400, "body": "{\"error\":\"café <b> & co\"}" },
+  "expected_request": { "method": "GET", "path": "/work-items/7", "auth_header": "authorization" },
+  "expected_error": { "status": 400, "outcome": "client_error", "message_contains": "café <b> & co" }
+}

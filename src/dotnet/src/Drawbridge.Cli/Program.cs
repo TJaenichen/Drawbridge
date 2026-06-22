@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Drawbridge.Core;
 
 static string? Arg(string flag)
@@ -6,6 +8,25 @@ static string? Arg(string flag)
     for (var i = 0; i < a.Length - 1; i++)
         if (a[i] == flag) return a[i + 1];
     return null;
+}
+
+if (Environment.GetCommandLineArgs().Contains("generate"))
+{
+    var from = Arg("--from");
+    if (from is null)
+    {
+        Console.Error.WriteLine("usage: drawbridge generate --from <openapi> [--platform <key>] [--out <config>]");
+        return 2;
+    }
+    var text = File.ReadAllText(from);
+    var doc = (from.EndsWith(".json", StringComparison.Ordinal) ? JsonNode.Parse(text) : Yaml.Parse(text))!.AsObject();
+    var generated = OpenApiGenerator.Generate(doc, Arg("--platform") ?? "api");
+    var json = generated.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    var outPath = Arg("--out");
+    if (outPath is not null) File.WriteAllText(outPath, json + "\n");
+    else Console.Out.WriteLine(json);
+    Console.Error.WriteLine("drawbridge: draft config generated — review and prune before exposing.");
+    return 0;
 }
 
 var configPath = Arg("--config");

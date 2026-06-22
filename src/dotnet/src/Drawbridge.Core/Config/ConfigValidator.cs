@@ -105,7 +105,8 @@ public static partial class ConfigValidator
             "string" => kind == JsonValueKind.String,
             "boolean" => kind is JsonValueKind.True or JsonValueKind.False,
             "number" => kind == JsonValueKind.Number,
-            "integer" => kind == JsonValueKind.Number && long.TryParse(v.ToJsonString(), out _),
+            // Match JS Number.isInteger: any integral numeric value (e.g. 1.0), not just long-lexical.
+            "integer" => kind == JsonValueKind.Number && double.TryParse(v.ToJsonString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) && double.IsFinite(d) && d == Math.Truncate(d),
             "array" => kind == JsonValueKind.Array,
             _ => true,
         };

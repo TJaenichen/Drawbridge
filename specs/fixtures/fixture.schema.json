@@ -7,8 +7,12 @@
   "required": ["$kind", "description"],
   "additionalProperties": false,
   "properties": {
-    "$kind": { "enum": ["tools", "request", "config_valid", "config_invalid"] },
+    "$kind": { "enum": ["tools", "request", "config_valid", "config_invalid", "generate"] },
     "description": { "type": "string", "minLength": 1 },
+    "openapi": { "type": "object", "description": "Inline OpenAPI document (generate)." },
+    "openapi_ref": { "type": "string", "description": "Path to an OpenAPI document, relative to this fixture (generate)." },
+    "platform": { "type": "string", "description": "Platform key for the generated config (generate)." },
+    "expected_config": { "type": "object", "description": "The draft config the generator must produce (generate)." },
     "env": {
       "type": "object",
       "additionalProperties": { "type": "string" },
@@ -101,6 +105,13 @@
     {
       "if": { "properties": { "$kind": { "const": "config_invalid" } } },
       "then": { "required": ["config", "expected"] }
+    },
+    {
+      "if": { "properties": { "$kind": { "const": "generate" } } },
+      "then": {
+        "required": ["platform", "expected_config"],
+        "oneOf": [{ "required": ["openapi"] }, { "required": ["openapi_ref"] }]
+      }
     }
   ]
 }

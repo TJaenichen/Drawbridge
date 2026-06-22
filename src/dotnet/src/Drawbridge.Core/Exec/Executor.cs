@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -14,17 +15,33 @@ public sealed record BuiltRequest(
 
 public static partial class Executor
 {
+    // Relaxed encoder so non-ASCII/HTML chars are NOT \uXXXX-escaped — matches JSON.stringify.
+    internal static readonly JsonSerializerOptions Relaxed = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
     [GeneratedRegex(@"(Bearer|Basic)\s+\S+", RegexOptions.IgnoreCase)]
     private static partial Regex SchemeToken();
 
     private static IEnumerable<ParamConfig> Params(GeneratedTool t, string where) =>
         (t.Operation.Params ?? []).Where(p => p.In == where);
 
-    private static JsonNode? Value(ParamConfig p, JsonObject args) =>
-        args.TryGetPropertyValue(p.Name, out var v) && v is not null ? v : p.Default;
+    /// <summary>Mirror Node's value(): a present key (even JSON null) counts as provided;
+    /// only an absent key falls back to the default.</summary>
+    private static (bool Provided, JsonNode? Value) Resolve(ParamConfig p, JsonObject args)
+    {
+        if (args.TryGetPropertyValue(p.Name, out var v)) return (true, v);
+        if (p.Default is not null) return (true, p.Default);
+        return (false, null);
+    }
 
-    private static string Scalar(JsonNode n) =>
-        n.GetValueKind() == JsonValueKind.String ? n.GetValue<string>() : n.ToJsonString();
+    private static string Scalar(JsonNode? n) =>
+        n is null ? "null" : n.GetValueKind() == JsonValueKind.String ? n.GetValue<string>() : n.ToJsonString(Relaxed);
+
+    /// <summary>encodeURIComponent-equivalent: EscapeDataString then restore the five marks
+    /// JS leaves literal (! * ' ( )), so path/query bytes match Node exactly.</summary>
+    private static string EscapeComponent(string s) =>
+        Uri.EscapeDataString(s).Replace("%21", "!").Replace("%2A", "*").Replace("%27", "'").Replace("%28", "(").Replace("%29", ")");
+
+    private static string StripOneTrailingSlash(string s) => s.EndsWith('/') ? s[..^1] : s;
 
     /// <summary>Build the outbound request (pure). Throws on a missing required arg.</summary>
     public static BuiltRequest BuildRequest(DrawbridgeConfig config, GeneratedTool tool, JsonObject args, ConfigLoader.EnvLookup env)
@@ -33,22 +50,22 @@ public static partial class Executor
         var op = tool.Operation;
 
         var missing = (op.Params ?? [])
-            .Where(p => Value(p, args) is null && (p.Required == true || p.In == "path"))
+            .Where(p => !Resolve(p, args).Provided && (p.Required == true || p.In == "path"))
             .Select(p => p.Name).ToList();
         if (missing.Count > 0) throw new InvalidOperationException($"missing required argument(s): {string.Join(", ", missing)}");
 
         var path = op.Path;
         foreach (var p in Params(tool, "path"))
-            path = path.Replace($"{{{p.Name}}}", Uri.EscapeDataString(Scalar(Value(p, args)!)));
+            path = path.Replace($"{{{p.Name}}}", EscapeComponent(Scalar(Resolve(p, args).Value)));
 
         var pairs = new List<string>();
         foreach (var p in Params(tool, "query"))
         {
-            var v = Value(p, args);
-            if (v is null) continue;
-            var items = v is JsonArray arr ? arr.Select(x => x!) : [v];
+            var (provided, value) = Resolve(p, args);
+            if (!provided) continue;
+            var items = value is JsonArray arr ? arr.Select(x => (JsonNode?)x) : [value];
             foreach (var item in items)
-                pairs.Add($"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(Scalar(item))}");
+                pairs.Add($"{EscapeComponent(p.Name)}={EscapeComponent(Scalar(item))}");
         }
         var query = pairs.Count > 0 ? "?" + string.Join("&", pairs) : "";
 
@@ -60,20 +77,20 @@ public static partial class Executor
             var obj = new JsonObject();
             foreach (var p in bodyParams)
             {
-                var v = Value(p, args);
-                if (v is not null) obj[p.Name] = v.DeepClone();
+                var (provided, value) = Resolve(p, args);
+                if (provided) obj[p.Name] = value?.DeepClone();
             }
-            body = obj.ToJsonString();
+            body = obj.ToJsonString(Relaxed);
             headers["content-type"] = "application/json";
         }
 
         var auth = AuthInjector.Build(platform.Auth, env);
         headers[auth.Name.ToLowerInvariant()] = auth.Value;
 
-        var baseUrl = platform.BaseUrl.TrimEnd('/');
+        var baseUrl = StripOneTrailingSlash(platform.BaseUrl);
         var request = new HttpRequestData(op.Method, $"{baseUrl}{path}{query}", headers, body);
-        var timeout = op.TimeoutMs ?? platform.TimeoutMs ?? config.Defaults?.TimeoutMs ?? Defaultss.TimeoutMs;
-        var max = op.MaxResponseBytes ?? Defaultss.MaxResponseBytes;
+        var timeout = op.TimeoutMs ?? platform.TimeoutMs ?? config.Defaults?.TimeoutMs ?? DefaultLimits.TimeoutMs;
+        var max = op.MaxResponseBytes ?? DefaultLimits.MaxResponseBytes;
         return new BuiltRequest(request, auth.Name.ToLowerInvariant(), timeout, max, new Uri(baseUrl).Authority, path);
     }
 
@@ -122,7 +139,9 @@ public static partial class Executor
         string? message = null;
         if (outcome != "ok")
         {
-            var raw = data is JsonValue jv && jv.GetValueKind() == JsonValueKind.String ? jv.GetValue<string>() : data?.ToJsonString() ?? "";
+            var raw = data is null ? "null"
+                : data is JsonValue jv && jv.GetValueKind() == JsonValueKind.String ? jv.GetValue<string>()
+                : data.ToJsonString(Relaxed);
             message = Scrub(raw);
             if (message.Length > 500) message = message[..500];
         }
@@ -175,7 +194,7 @@ public static partial class Executor
 
     private static string SafeHost(string baseUrl)
     {
-        try { return new Uri(baseUrl.TrimEnd('/')).Authority; }
+        try { return new Uri(StripOneTrailingSlash(baseUrl)).Authority; }
         catch { return ""; }
     }
 }

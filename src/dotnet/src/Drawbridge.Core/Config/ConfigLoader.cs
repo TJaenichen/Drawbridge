@@ -11,7 +11,7 @@ public static partial class ConfigLoader
     [GeneratedRegex(@"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")]
     private static partial Regex EnvRef();
 
-    [GeneratedRegex(@"^https?://[^@\s]+$")]
+    [GeneratedRegex(@"^https?://[^@\s]+\z")]
     private static partial Regex BaseUrlOk();
 
     /// <summary>Validate, then resolve a raw config node against the environment.

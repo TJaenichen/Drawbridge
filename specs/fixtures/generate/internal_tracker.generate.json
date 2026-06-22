@@ -1,0 +1,46 @@
+{
+  "$kind": "generate",
+  "description": "OpenAPI -> draft config: server url as base_url, bearer auth stub, ops with flattened params, $ref-resolved JSON body, enum/default/required carried through.",
+  "openapi_ref": "../../openapi.example.yaml",
+  "platform": "internal_tracker",
+  "expected_config": {
+    "version": 1,
+    "platforms": {
+      "internal_tracker": {
+        "base_url": "http://localhost:4010",
+        "auth": { "type": "bearer", "secret_env": "BEARERAUTH_TOKEN" },
+        "operations": [
+          {
+            "name": "list_work_items",
+            "description": "List work items",
+            "method": "GET",
+            "path": "/work-items",
+            "params": [
+              { "name": "state", "in": "query", "type": "enum", "enum": ["open", "closed", "all"], "default": "open" }
+            ]
+          },
+          {
+            "name": "create_work_item",
+            "description": "Create a work item",
+            "method": "POST",
+            "path": "/work-items",
+            "params": [
+              { "name": "title", "in": "body", "type": "string", "required": true },
+              { "name": "description", "in": "body", "type": "string" },
+              { "name": "type", "in": "body", "type": "enum", "enum": ["task", "bug", "feature"], "default": "task" }
+            ]
+          },
+          {
+            "name": "get_work_item",
+            "description": "Get a single work item by id",
+            "method": "GET",
+            "path": "/work-items/{id}",
+            "params": [
+              { "name": "id", "in": "path", "type": "integer", "required": true }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,3 +1,5 @@
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Drawbridge.Core;
@@ -9,6 +11,7 @@ namespace Drawbridge.Core;
 public sealed class McpStdioServer
 {
     private const string Version = "0.1.0";
+    private static readonly JsonSerializerOptions PrettyRelaxed = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
     private readonly DrawbridgeConfig _config;
     private readonly ConfigLoader.EnvLookup _env;
     private readonly IHttpClient _http;
@@ -38,37 +41,57 @@ public sealed class McpStdioServer
             try { msg = JsonNode.Parse(line)!.AsObject(); }
             catch { continue; }
 
-            var method = msg["method"]?.GetValue<string>();
+            // A non-string method (or no method) means this isn't a request we handle.
+            var method = (msg["method"] as JsonValue)?.GetValueKind() == JsonValueKind.String ? msg["method"]!.GetValue<string>() : null;
             var id = msg["id"];
-            if (method is null) continue; // a response or malformed message
+            if (method is null) continue;
 
-            switch (method)
+            // Never let a malformed/ill-typed frame crash the loop (§12): on error, reply
+            // -32602 for a request, ignore for a notification.
+            try
             {
-                case "initialize":
-                    var pv = msg["params"]?["protocolVersion"]?.GetValue<string>() ?? "2025-06-18";
-                    Respond(output, id, new JsonObject
-                    {
-                        ["protocolVersion"] = pv,
-                        ["capabilities"] = new JsonObject { ["tools"] = new JsonObject() },
-                        ["serverInfo"] = new JsonObject { ["name"] = "drawbridge", ["version"] = Version },
-                        ["instructions"] = $"Drawbridge proxy (config version {_config.Version}). Typed, allowlisted proxies to internal APIs; credentials stay server-side.",
-                    });
-                    break;
-                case "notifications/initialized":
-                    break; // notification — no response
-                case "ping":
-                    Respond(output, id, new JsonObject());
-                    break;
-                case "tools/list":
-                    Respond(output, id, ToolsList());
-                    break;
-                case "tools/call":
-                    Respond(output, id, await ToolsCall(msg["params"]?.AsObject() ?? []));
-                    break;
-                default:
-                    if (id is not null) RespondError(output, id, -32601, $"Method not found: {method}");
-                    break;
+                await Dispatch(output, method, id, msg);
             }
+            catch (Exception e) when (id is not null)
+            {
+                RespondError(output, id, -32602, $"Invalid params: {e.Message}");
+            }
+            catch
+            {
+                // notification (no id) — swallow
+            }
+        }
+    }
+
+    private async Task Dispatch(TextWriter output, string method, JsonNode? id, JsonObject msg)
+    {
+        switch (method)
+        {
+            case "initialize":
+                var pv = (msg["params"]?["protocolVersion"] as JsonValue)?.GetValueKind() == JsonValueKind.String
+                    ? msg["params"]!["protocolVersion"]!.GetValue<string>() : "2025-06-18";
+                Respond(output, id, new JsonObject
+                {
+                    ["protocolVersion"] = pv,
+                    ["capabilities"] = new JsonObject { ["tools"] = new JsonObject() },
+                    ["serverInfo"] = new JsonObject { ["name"] = "drawbridge", ["version"] = Version },
+                    ["instructions"] = $"Drawbridge proxy (config version {_config.Version}). Tools are typed, allowlisted proxies to internal APIs; credentials stay server-side.",
+                });
+                break;
+            case "notifications/initialized":
+                break; // notification — no response
+            case "ping":
+                Respond(output, id, new JsonObject());
+                break;
+            case "tools/list":
+                Respond(output, id, ToolsList());
+                break;
+            case "tools/call":
+                Respond(output, id, await ToolsCall(msg["params"]?.AsObject() ?? []));
+                break;
+            default:
+                if (id is not null) RespondError(output, id, -32601, $"Method not found: {method}");
+                break;
         }
     }
 
@@ -99,7 +122,7 @@ public sealed class McpStdioServer
         {
             var text = result.Data is JsonValue v && v.GetValueKind() == System.Text.Json.JsonValueKind.String
                 ? v.GetValue<string>()
-                : result.Data?.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }) ?? "";
+                : result.Data?.ToJsonString(PrettyRelaxed) ?? "";
             if (result.Truncated) text += "\n\n[response truncated]";
             return TextResult(text, isError: false);
         }
@@ -115,7 +138,7 @@ public sealed class McpStdioServer
     private static void Respond(TextWriter output, JsonNode? id, JsonObject result)
     {
         var msg = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id?.DeepClone(), ["result"] = result };
-        output.WriteLine(msg.ToJsonString());
+        output.Write(msg.ToJsonString() + "\n"); // LF only, matching Node + MCP convention
         output.Flush();
     }
 
@@ -127,7 +150,7 @@ public sealed class McpStdioServer
             ["id"] = id?.DeepClone(),
             ["error"] = new JsonObject { ["code"] = code, ["message"] = message },
         };
-        output.WriteLine(msg.ToJsonString());
+        output.Write(msg.ToJsonString() + "\n"); // LF only
         output.Flush();
     }
 }

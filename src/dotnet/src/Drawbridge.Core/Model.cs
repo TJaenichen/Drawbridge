@@ -56,7 +56,7 @@ public sealed record GeneratedTool(
     string PlatformKey,
     OperationConfig Operation);
 
-public static class Defaultss
+public static class DefaultLimits
 {
     public const int TimeoutMs = 30000;
     public const int MaxResponseBytes = 1048576;

@@ -50,6 +50,7 @@ describe("request execution (golden fixtures)", () => {
       if (fx.expected_error) {
         expect(res.status).toBe(fx.expected_error.status);
         expect(res.outcome).toBe(fx.expected_error.outcome);
+        if (fx.expected_error.message_contains) expect(res.message).toContain(fx.expected_error.message_contains);
       }
     });
   }
