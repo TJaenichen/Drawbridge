@@ -1,44 +1,46 @@
-# Drawbridge declarative config.
+# Drawbridge declarative config — example.
 #
-# This is the heart of the project: each operation listed here becomes ONE typed,
-# schema'd MCP tool. Drawbridge injects auth itself (from secret_env), refuses any
-# request not described here, and never lets the model see the credential.
+# The heart of the project: each operation below becomes ONE typed, schema'd MCP
+# tool named "<platform_key>_<operation_name>". Drawbridge injects auth itself (from
+# secret_env), refuses any request not described here, and never lets the model see
+# the credential.
 #
-# This example mirrors specs/openapi.example.yaml and can be GENERATED from it
-# (see docs/) rather than hand-written.
+# Validates against specs/drawbridge.config.schema.json. Mirrors
+# specs/openapi.example.yaml and can be generated from it (see DESIGN §15).
+
+version: 1
+
+defaults:
+  timeout_ms: 30000
 
 platforms:
   internal_tracker:
     base_url: ${TRACKER_BASE_URL}        # e.g. http://localhost:4010 (mock) or an internal host
     auth:
       type: bearer
-      secret_env: TRACKER_TOKEN           # read from the environment on YOUR side; never sent to the model
-    read_only: false                      # set true to refuse all non-GET operations
+      secret_env: TRACKER_TOKEN          # read from the environment on YOUR side; never sent to the model
+    read_only: false
     operations:
       - name: list_work_items
-        summary: List work items, optionally filtered by state.
+        description: List work items, optionally filtered by state.
         method: GET
         path: /work-items
-        query:
-          - { name: state, type: string, enum: [open, closed, all], default: open }
+        params:
+          - { name: state, in: query, type: enum, enum: [open, closed, all], default: open }
 
       - name: get_work_item
-        summary: Get a single work item by id.
+        description: Get a single work item by id.
         method: GET
         path: /work-items/{id}
         params:
-          - { name: id, type: integer, required: true }
+          - { name: id, in: path, type: integer, required: true }
 
       - name: create_work_item
-        summary: Create a new work item.
+        description: Create a new work item.
         method: POST
         path: /work-items
-        body:
-          - { name: title, type: string, required: true }
-          - { name: description, type: string }
-          - { name: type, type: string, enum: [task, bug, feature], default: task }
-
-# Escape hatch — disabled by default. When enabled, only the listed hosts are reachable.
-raw_request:
-  enabled: false
-  allowed_hosts: []
+        max_response_bytes: 1048576
+        params:
+          - { name: title, in: body, type: string, required: true }
+          - { name: description, in: body, type: string }
+          - { name: type, in: body, type: enum, enum: [task, bug, feature], default: task }

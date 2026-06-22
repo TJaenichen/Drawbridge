@@ -1,0 +1,49 @@
+{
+  "$kind": "tools",
+  "description": "Tool generation from the example config: 3 prefixed tools, flattened params, descriptions required, closed input schemas.",
+  "env": {
+    "TRACKER_BASE_URL": "http://localhost:4010",
+    "TRACKER_TOKEN": "dummy-token"
+  },
+  "config_ref": "../drawbridge.config.example.yaml",
+  "expected_tools": [
+    {
+      "name": "internal_tracker_list_work_items",
+      "description": "List work items, optionally filtered by state.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "state": { "type": "string", "enum": ["open", "closed", "all"], "default": "open" }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "internal_tracker_get_work_item",
+      "description": "Get a single work item by id.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "integer" }
+        },
+        "required": ["id"]
+      }
+    },
+    {
+      "name": "internal_tracker_create_work_item",
+      "description": "Create a new work item.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "type": { "type": "string", "enum": ["task", "bug", "feature"], "default": "task" }
+        },
+        "required": ["title"]
+      }
+    }
+  ]
+}

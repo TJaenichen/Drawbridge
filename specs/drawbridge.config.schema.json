@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drawbridge.dev/schema/drawbridge.config.v1.json",
+  "title": "Drawbridge configuration (v1)",
+  "description": "The single source of truth for the shape of a Drawbridge config. Both implementations validate against this. additionalProperties is false throughout so typos fail fast.",
+  "type": "object",
+  "required": ["version", "platforms"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "description": "Config-format version. Unknown versions are rejected.",
+      "const": 1
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeout_ms": { "$ref": "#/$defs/timeoutMs" }
+      }
+    },
+    "platforms": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Map of platform key -> platform. The key is the tool-name prefix.",
+      "propertyNames": { "$ref": "#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/platform" }
+    },
+    "raw_request": {
+      "description": "[v2] Reserved escape hatch. In v1 it must be absent or disabled.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "v1: must be false.",
+          "const": false
+        },
+        "allowed_hosts": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Lower-case snake identifier."
+    },
+    "timeoutMs": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Request timeout in milliseconds."
+    },
+    "scalarType": {
+      "enum": ["string", "integer", "number", "boolean", "enum"]
+    },
+    "platform": {
+      "type": "object",
+      "required": ["base_url", "auth", "operations"],
+      "additionalProperties": false,
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Fixed host+base path. May contain ${ENV} interpolation. Never model-controllable."
+        },
+        "timeout_ms": { "$ref": "#/$defs/timeoutMs" },
+        "read_only": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, non-GET operations are not generated as tools."
+        },
+        "auth": { "$ref": "#/$defs/auth" },
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/operation" }
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "description": "v1 supports bearer | header | basic. oauth is reserved for v2 and is intentionally not accepted here.",
+      "properties": {
+        "type": { "enum": ["bearer", "header", "basic"] },
+        "secret_env": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string", "minLength": 1, "description": "Header name (type=header)." },
+        "username_env": { "$ref": "#/$defs/identifier" },
+        "password_env": { "$ref": "#/$defs/identifier" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "bearer" } } },
+          "then": { "required": ["secret_env"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "header" } } },
+          "then": { "required": ["name", "secret_env"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "basic" } } },
+          "then": { "required": ["username_env", "password_env"] }
+        }
+      ]
+    },
+    "operation": {
+      "type": "object",
+      "required": ["name", "description", "method", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required. Becomes the MCP tool description."
+        },
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "path": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "Path template with {name} placeholders bound to in:path params."
+        },
+        "params": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/param" }
+        },
+        "returns": {
+          "description": "[v2] Field allowlist. Specced; not enforced in v1.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fields": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "max_response_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1048576,
+          "description": "Truncate responses larger than this (default 1 MiB)."
+        }
+      }
+    },
+    "param": {
+      "type": "object",
+      "required": ["name", "in", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "in": { "enum": ["path", "query", "body"] },
+        "type": { "enum": ["string", "integer", "number", "boolean", "enum", "array"] },
+        "required": { "type": "boolean", "default": false },
+        "description": { "type": "string" },
+        "enum": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "Allowed string values (type=enum)."
+        },
+        "default": {
+          "description": "Default value when the param is omitted (any JSON value)."
+        },
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Element schema (type=array). No nested arrays/objects in v1.",
+          "required": ["type"],
+          "properties": {
+            "type": { "$ref": "#/$defs/scalarType" },
+            "enum": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "enum" } } },
+          "then": { "required": ["enum"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "array" } } },
+          "then": { "required": ["items"] }
+        }
+      ]
+    }
+  }
+}
