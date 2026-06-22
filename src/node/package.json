@@ -1,0 +1,27 @@
+{
+  "name": "drawbridge-mcp",
+  "version": "0.1.0",
+  "description": "A declarative, secure bridge that exposes internal HTTP APIs to AI agents as typed, allowlisted MCP tools.",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "drawbridge-mcp": "dist/index.js" },
+  "files": ["dist", "schema"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "ajv": "^8.17.1",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

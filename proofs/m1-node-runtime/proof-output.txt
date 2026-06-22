@@ -1,0 +1,46 @@
+drawbridge: ready (stdio)
+== generated tools ==
+internal_tracker_list_work_items, internal_tracker_get_work_item, internal_tracker_create_work_item
+{"v":1,"ts":"2026-06-22T16:50:14.576Z","platform":"internal_tracker","operation":"list_work_items","method":"GET","host":"localhost:4055","path":"/work-items","status":200,"duration_ms":72,"outcome":"ok","bytes":2,"request_id":"9a18e599-1389-4d13-afe1-7027795cabfa"}
+
+== BEFORE: list_work_items ==
+[]
+{"v":1,"ts":"2026-06-22T16:50:14.587Z","platform":"internal_tracker","operation":"create_work_item","method":"POST","host":"localhost:4055","path":"/work-items","status":201,"duration_ms":6,"outcome":"ok","bytes":72,"request_id":"9523d5d3-28ae-47f9-972a-a0622f5076b0"}
+
+== create_work_item {title: 'Investigate prod timeout'} ==
+{
+  "id": 1,
+  "state": "open",
+  "title": "Investigate prod timeout",
+  "type": "task"
+}
+{"v":1,"ts":"2026-06-22T16:50:14.592Z","platform":"internal_tracker","operation":"list_work_items","method":"GET","host":"localhost:4055","path":"/work-items","status":200,"duration_ms":2,"outcome":"ok","bytes":74,"request_id":"207bb497-0ab0-4eb9-bc0a-3972aa173c3e"}
+
+== AFTER: list_work_items ==
+[
+  {
+    "id": 1,
+    "state": "open",
+    "title": "Investigate prod timeout",
+    "type": "task"
+  }
+]
+{"v":1,"ts":"2026-06-22T16:50:14.595Z","platform":"internal_tracker","operation":"get_work_item","method":"GET","host":"localhost:4055","path":"/work-items/1","status":200,"duration_ms":2,"outcome":"ok","bytes":72,"request_id":"0ec858b6-2077-416d-9d1d-8f7e76905efb"}
+
+== get_work_item {id: 1} ==
+{
+  "id": 1,
+  "state": "open",
+  "title": "Investigate prod timeout",
+  "type": "task"
+}
+{"v":1,"ts":"2026-06-22T16:50:14.596Z","platform":"","operation":"internal_tracker_delete_everything","method":"","host":"","path":"","status":0,"duration_ms":0,"outcome":"refused","bytes":0,"request_id":"25906d8e-cec1-4e22-9c6c-731aba2f6398"}
+
+== closed-world: undeclared tool is refused ==  (isError)
+Unknown tool: internal_tracker_delete_everything
+
+== stub server request log (note auth=present on every call) ==
+GET /work-items?state=open  auth=present
+POST /work-items  auth=present
+GET /work-items?state=open  auth=present
+GET /work-items/1  auth=present
