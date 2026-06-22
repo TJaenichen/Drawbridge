@@ -5,7 +5,7 @@
     "TRACKER_BASE_URL": "http://localhost:4010",
     "TRACKER_TOKEN": "dummy-token"
   },
-  "config_ref": "../drawbridge.config.example.yaml",
+  "config_ref": "../../drawbridge.config.example.yaml",
   "expected_tools": [
     {
       "name": "internal_tracker_list_work_items",

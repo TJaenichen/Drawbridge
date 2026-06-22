@@ -1,0 +1,15 @@
+{
+  "$kind": "config_invalid",
+  "description": "Security: a protocol-relative path (//host) that would swap the host is rejected.",
+  "config": {
+    "version": 1,
+    "platforms": {
+      "p": {
+        "base_url": "https://host.internal",
+        "auth": { "type": "bearer", "secret_env": "TOK" },
+        "operations": [{ "name": "op", "description": "d", "method": "GET", "path": "//attacker.example/steal" }]
+      }
+    }
+  },
+  "expected": { "pointer": "/platforms/p/operations/0/path", "message_contains": "pattern" }
+}

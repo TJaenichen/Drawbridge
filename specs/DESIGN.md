@@ -130,11 +130,24 @@ of those. **No nested objects in v1.**
 - **read_only:** when `true`, operations whose `method` is not `GET` are **not
   generated at all** — the write tools do not exist (#10d).
 
+**Validator-enforced invariants** (JSON Schema can't cross-reference, so the loader's
+validator enforces these; each has a conformance fixture):
+- **Tool-name uniqueness:** the computed `{platform}_{operation}` must be globally
+  unique; a collision is fatal. (The underscore join is ambiguous — `a`+`b_c` vs
+  `a_b`+`c` both yield `a_b_c` — so the validator rejects the resulting duplicate.)
+- **Path ↔ param coverage:** every `{placeholder}` in `path` has exactly one matching
+  `in:path` param; every `in:path` param appears in the template; `in:path` params are
+  implicitly required; no `..` traversal segments.
+- **Value agreement:** an `enum` param's `default` is one of its members; a `default`
+  matches the param's declared type.
+
 ## 6. Request execution
 
 - **Path:** substitute `{name}` from `in: path` params; values are **URL-encoded**.
   Host and path template come only from config — never from the model (§8a).
 - **Query:** `in: query` params appended; omitted when not supplied and no default.
+  **Array query params serialize as repeated keys** (`?label=a&label=b`); arrays are
+  restricted to `in: query | body` (no array-in-path).
 - **Body:** `in: body` params assembled into a JSON object; `Content-Type:
   application/json`. (Other content types: [v2].)
 - **Timeout:** `timeout_ms` (operation → platform → defaults → 30000). On timeout,

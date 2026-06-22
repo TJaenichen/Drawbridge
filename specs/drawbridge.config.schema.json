@@ -26,17 +26,14 @@
       "additionalProperties": { "$ref": "#/$defs/platform" }
     },
     "raw_request": {
-      "description": "[v2] Reserved escape hatch. In v1 it must be absent or disabled.",
+      "description": "[v2] Reserved escape hatch. In v1 it must be absent or, if present, explicitly disabled.",
       "type": "object",
+      "required": ["enabled"],
       "additionalProperties": false,
       "properties": {
         "enabled": {
-          "description": "v1: must be false.",
+          "description": "v1: must be false (presence requires an explicit disable).",
           "const": false
-        },
-        "allowed_hosts": {
-          "type": "array",
-          "items": { "type": "string" }
         }
       }
     }
@@ -45,14 +42,20 @@
     "identifier": {
       "type": "string",
       "pattern": "^[a-z0-9_]+$",
-      "description": "Lower-case snake identifier."
+      "description": "Lower-case snake identifier (platform keys, operation/param names)."
+    },
+    "envVar": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "description": "Environment variable name (conventionally upper-case)."
     },
     "timeoutMs": {
       "type": "integer",
       "minimum": 1,
       "description": "Request timeout in milliseconds."
     },
-    "scalarType": {
+    "elementType": {
+      "description": "Allowed array-element / leaf types.",
       "enum": ["string", "integer", "number", "boolean", "enum"]
     },
     "platform": {
@@ -63,7 +66,8 @@
         "base_url": {
           "type": "string",
           "minLength": 1,
-          "description": "Fixed host+base path. May contain ${ENV} interpolation. Never model-controllable."
+          "pattern": "^(https?://|\\$\\{)[^@\\s]+$",
+          "description": "Fixed host+base path. Must be http(s) (or start with ${ENV}); no inline userinfo (@) — credentials only via auth.*_env. Never model-controllable."
         },
         "timeout_ms": { "$ref": "#/$defs/timeoutMs" },
         "read_only": {
@@ -86,23 +90,23 @@
       "description": "v1 supports bearer | header | basic. oauth is reserved for v2 and is intentionally not accepted here.",
       "properties": {
         "type": { "enum": ["bearer", "header", "basic"] },
-        "secret_env": { "$ref": "#/$defs/identifier" },
-        "name": { "type": "string", "minLength": 1, "description": "Header name (type=header)." },
-        "username_env": { "$ref": "#/$defs/identifier" },
-        "password_env": { "$ref": "#/$defs/identifier" }
+        "secret_env": { "$ref": "#/$defs/envVar" },
+        "name": { "type": "string", "pattern": "^[A-Za-z0-9-]+$", "description": "Header name (type=header). HTTP token chars only — no CR/LF/space." },
+        "username_env": { "$ref": "#/$defs/envVar" },
+        "password_env": { "$ref": "#/$defs/envVar" }
       },
       "allOf": [
         {
           "if": { "properties": { "type": { "const": "bearer" } } },
-          "then": { "required": ["secret_env"] }
+          "then": { "required": ["secret_env"], "properties": { "name": false, "username_env": false, "password_env": false } }
         },
         {
           "if": { "properties": { "type": { "const": "header" } } },
-          "then": { "required": ["name", "secret_env"] }
+          "then": { "required": ["name", "secret_env"], "properties": { "username_env": false, "password_env": false } }
         },
         {
           "if": { "properties": { "type": { "const": "basic" } } },
-          "then": { "required": ["username_env", "password_env"] }
+          "then": { "required": ["username_env", "password_env"], "properties": { "secret_env": false, "name": false } }
         }
       ]
     },
@@ -118,10 +122,11 @@
           "description": "Required. Becomes the MCP tool description."
         },
         "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "timeout_ms": { "$ref": "#/$defs/timeoutMs" },
         "path": {
           "type": "string",
-          "pattern": "^/",
-          "description": "Path template with {name} placeholders bound to in:path params."
+          "pattern": "^/(?![/\\\\]).*$",
+          "description": "Host-relative path template with {name} placeholders bound to in:path params. Single leading slash only (no protocol-relative //host)."
         },
         "params": {
           "type": "array",
@@ -168,9 +173,15 @@
           "description": "Element schema (type=array). No nested arrays/objects in v1.",
           "required": ["type"],
           "properties": {
-            "type": { "$ref": "#/$defs/scalarType" },
+            "type": { "$ref": "#/$defs/elementType" },
             "enum": { "type": "array", "minItems": 1, "items": { "type": "string" } }
-          }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "type": { "const": "enum" } } },
+              "then": { "required": ["enum"] }
+            }
+          ]
         }
       },
       "allOf": [
@@ -179,8 +190,16 @@
           "then": { "required": ["enum"] }
         },
         {
+          "if": { "not": { "properties": { "type": { "const": "enum" } } } },
+          "then": { "properties": { "enum": false } }
+        },
+        {
           "if": { "properties": { "type": { "const": "array" } } },
-          "then": { "required": ["items"] }
+          "then": { "required": ["items"], "properties": { "in": { "enum": ["query", "body"] } } }
+        },
+        {
+          "if": { "not": { "properties": { "type": { "const": "array" } } } },
+          "then": { "properties": { "items": false } }
         }
       ]
     }

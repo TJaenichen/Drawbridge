@@ -1,0 +1,10 @@
+{
+  "name": "m0-validate",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway: validate the M0 config schema against good/bad configs to produce the proof.",
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "js-yaml": "^4.1.0"
+  }
+}

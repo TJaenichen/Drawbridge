@@ -1,0 +1,33 @@
+PASS  config schema compiles (valid 2020-12)
+PASS  fixture schema compiles (valid 2020-12)
+PASS  example config validates
+
+-- 8 fixtures --
+PASS  fixture shape: fixtures/tools/array_params.tools.json
+PASS    config valid: fixtures/tools/array_params.tools.json
+PASS  fixture shape: fixtures/tools/internal_tracker.tools.json
+PASS    config valid: fixtures/tools/internal_tracker.tools.json
+PASS  fixture shape: fixtures/tools/read_only.tools.json
+PASS    config valid: fixtures/tools/read_only.tools.json
+PASS  fixture shape: fixtures/validation/header-auth.config_valid.json
+PASS    config valid: fixtures/validation/header-auth.config_valid.json
+PASS  fixture shape: fixtures/validation/inline-userinfo-base-url.config_invalid.json
+PASS    rejected at expected pointer: fixtures/validation/inline-userinfo-base-url.config_invalid.json  -> errors at [/platforms/p/base_url]
+PASS  fixture shape: fixtures/validation/protocol-relative-path.config_invalid.json
+PASS    rejected at expected pointer: fixtures/validation/protocol-relative-path.config_invalid.json  -> errors at [/platforms/p/operations/0/path]
+PASS  fixture shape: fixtures/validation/unknown-property.config_invalid.json
+PASS    rejected at expected pointer: fixtures/validation/unknown-property.config_invalid.json  -> errors at [/platforms/p]
+PASS  fixture shape: fixtures/validation/wrong-auth-field.config_invalid.json
+PASS    rejected at expected pointer: fixtures/validation/wrong-auth-field.config_invalid.json  -> errors at [/platforms/p/auth/password_env, /platforms/p/auth]
+
+-- 8 inline bad configs (expect all rejected) --
+PASS  reject: unknown version  -> /version must be equal to constant
+PASS  reject: oauth auth  -> /platforms/p/auth/type must be equal to one of the allowed values
+PASS  reject: missing description  -> /platforms/p/operations/0 must have required property 'description'
+PASS  reject: enum without enum list  -> /platforms/p/operations/0/params/0 must have required property 'enum'
+PASS  reject: enum on non-enum type  -> /platforms/p/operations/0/params/0/enum boolean schema is false
+PASS  reject: array in path  -> /platforms/p/operations/0/params/0/in must be equal to one of the allowed values
+PASS  reject: bad header name (CRLF)  -> /platforms/p/auth/name must match pattern "^[A-Za-z0-9-]+$"
+PASS  reject: raw_request present without enabled  -> /raw_request must have required property 'enabled'
+
+--- RESULT: PASS (27/27 checks) ---

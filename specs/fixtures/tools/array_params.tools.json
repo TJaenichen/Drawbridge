@@ -1,0 +1,41 @@
+{
+  "$kind": "tools",
+  "description": "Array params map to {type:array, items:<element>}; array-of-enum carries its members.",
+  "env": { "SVC_TOKEN": "dummy-token" },
+  "config": {
+    "version": 1,
+    "platforms": {
+      "svc": {
+        "base_url": "https://svc.internal",
+        "auth": { "type": "bearer", "secret_env": "SVC_TOKEN" },
+        "operations": [
+          {
+            "name": "search",
+            "description": "Search items.",
+            "method": "GET",
+            "path": "/search",
+            "params": [
+              { "name": "labels", "in": "query", "type": "array", "items": { "type": "string" } },
+              { "name": "states", "in": "query", "type": "array", "items": { "type": "enum", "enum": ["open", "closed"] } }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "expected_tools": [
+    {
+      "name": "svc_search",
+      "description": "Search items.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "labels": { "type": "array", "items": { "type": "string" } },
+          "states": { "type": "array", "items": { "type": "string", "enum": ["open", "closed"] } }
+        },
+        "required": []
+      }
+    }
+  ]
+}

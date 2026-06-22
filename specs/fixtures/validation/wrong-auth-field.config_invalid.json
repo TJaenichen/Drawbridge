@@ -1,0 +1,15 @@
+{
+  "$kind": "config_invalid",
+  "description": "A bearer auth carrying a basic-auth field (password_env) is rejected — wrong-type auth fields are not silently accepted.",
+  "config": {
+    "version": 1,
+    "platforms": {
+      "p": {
+        "base_url": "https://host.internal",
+        "auth": { "type": "bearer", "secret_env": "TOK", "password_env": "PASS" },
+        "operations": [{ "name": "op", "description": "d", "method": "GET", "path": "/p" }]
+      }
+    }
+  },
+  "expected": { "pointer": "/platforms/p/auth", "message_contains": "" }
+}

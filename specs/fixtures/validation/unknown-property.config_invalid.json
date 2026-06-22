@@ -1,0 +1,16 @@
+{
+  "$kind": "config_invalid",
+  "description": "A typo'd property (base_urls) is rejected by additionalProperties:false.",
+  "config": {
+    "version": 1,
+    "platforms": {
+      "p": {
+        "base_urls": "http://x",
+        "base_url": "http://x",
+        "auth": { "type": "bearer", "secret_env": "TOK" },
+        "operations": [{ "name": "op", "description": "d", "method": "GET", "path": "/p" }]
+      }
+    }
+  },
+  "expected": { "pointer": "/platforms/p", "message_contains": "additional properties" }
+}

@@ -1,0 +1,27 @@
+{
+  "$kind": "tools",
+  "description": "read_only:true omits non-GET tools entirely (security §8d). The POST op must NOT appear.",
+  "env": { "SVC_TOKEN": "dummy-token" },
+  "config": {
+    "version": 1,
+    "platforms": {
+      "svc": {
+        "base_url": "https://svc.internal",
+        "read_only": true,
+        "auth": { "type": "bearer", "secret_env": "SVC_TOKEN" },
+        "operations": [
+          { "name": "list_items", "description": "List items.", "method": "GET", "path": "/items" },
+          { "name": "create_item", "description": "Create an item.", "method": "POST", "path": "/items",
+            "params": [{ "name": "title", "in": "body", "type": "string", "required": true }] }
+        ]
+      }
+    }
+  },
+  "expected_tools": [
+    {
+      "name": "svc_list_items",
+      "description": "List items.",
+      "input_schema": { "type": "object", "additionalProperties": false, "properties": {}, "required": [] }
+    }
+  ]
+}

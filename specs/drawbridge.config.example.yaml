@@ -39,7 +39,6 @@ platforms:
         description: Create a new work item.
         method: POST
         path: /work-items
-        max_response_bytes: 1048576
         params:
           - { name: title, in: body, type: string, required: true }
           - { name: description, in: body, type: string }

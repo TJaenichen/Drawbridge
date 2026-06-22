@@ -5,15 +5,19 @@ mock where a backend is needed. They are the cross-language parity contract
 (DESIGN §13): comparison is **structural/semantic** — same objects and values, field
 order / whitespace / formatting irrelevant.
 
-A thin runner in each language loads a fixture, executes it, and asserts the
+A thin runner in each language loads a fixture, validates it against
+[`fixture.schema.json`](fixture.schema.json), executes it, and asserts the
 `expected_*` block by deep structural equality (objects key-order-independent; query
 params and headers compared as sets; the secret auth header value excluded).
+
+Layout by kind: `fixtures/tools/`, `fixtures/requests/`, `fixtures/validation/`.
+File names: `<scope>.<kind>.json`.
 
 ## Common fields
 
 ```jsonc
 {
-  "$kind": "tools" | "request",   // which contract this fixture asserts
+  "$kind": "tools" | "request" | "config_valid" | "config_invalid",   // which contract this fixture asserts
   "description": "human summary",
   "env": { "VAR": "value" },        // env used to resolve ${VAR}; secrets use a dummy value
   "config": { ... }                  // inline config, OR
@@ -68,6 +72,45 @@ against the Prism mock.
   "expected_error":  { "status": 404, "outcome": "client_error" }
 }
 ```
+
+## `$kind: "config_valid"` / `"config_invalid"` — schema behavior
+
+Assert that a config is accepted / rejected by `drawbridge.config.schema.json`. With
+only positive fixtures, a validator that accepts everything would pass — so the
+schema's *rejection* behavior must be asserted too.
+
+```jsonc
+// config_invalid: config is inline (intentionally malformed)
+{ "$kind": "config_invalid", "description": "...",
+  "config": { "version": 1, "platforms": { "p": { "base_urls": "http://x" } } },
+  "expected": { "pointer": "/platforms/p", "message_contains": "additional properties" } }
+
+// config_valid: config or config_ref must validate
+{ "$kind": "config_valid", "description": "header auth", "config": { /* ... */ } }
+```
+
+## Invariants the schema CANNOT express — validator-enforced (M1)
+
+JSON Schema can't cross-reference, so these are the validator's job (DESIGN §5/§6/§8)
+and each gets a fixture so M1 must enforce them:
+- **Tool-name uniqueness:** the computed `{platform}_{operation}` must be globally
+  unique; a collision is fatal. (Note the join is ambiguous — `a`+`b_c` vs `a_b`+`c`
+  both yield `a_b_c`; the validator rejects the resulting duplicate.)
+- **Path ↔ param coverage:** every `{placeholder}` in `path` has exactly one matching
+  `in:path` param, every `in:path` param appears in the template, and `in:path`
+  params are implicitly required. No `..` traversal segments.
+- **Value agreement:** an `enum` param's `default` must be one of its members; a
+  `default` must match the param's declared type.
+
+## Serialization rules (pin parity hazards)
+- **Array in query:** repeated-key, e.g. `?label=a&label=b` (not comma-joined).
+- Array params are restricted to `in: query | body` (no array-in-path).
+
+## M1 fixture backlog (deferred, not dropped)
+Authored here as targets; these need the M1 executor/mock to run:
+`request` fixtures for **type:header** and **type:basic** auth (assert header name,
+value excluded); **error mapping** (500→server_error, undeclared tool→refused,
+timeout); **response cap** truncation + `"truncated": true`; **${ENV} unset → fatal**.
 
 ## Conventions
 - One assertion focus per fixture; name files `<scope>.<kind>.json`.

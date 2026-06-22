@@ -1,0 +1,15 @@
+{
+  "$kind": "config_invalid",
+  "description": "Security: a base_url with inline userinfo (user:pass@host) is rejected — credentials only via auth.*_env.",
+  "config": {
+    "version": 1,
+    "platforms": {
+      "p": {
+        "base_url": "https://user:secret@host.internal",
+        "auth": { "type": "bearer", "secret_env": "TOK" },
+        "operations": [{ "name": "op", "description": "d", "method": "GET", "path": "/p" }]
+      }
+    }
+  },
+  "expected": { "pointer": "/platforms/p/base_url", "message_contains": "pattern" }
+}

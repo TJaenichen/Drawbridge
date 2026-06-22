@@ -1,0 +1,19 @@
+{
+  "$kind": "config_valid",
+  "description": "header auth (custom header name + secret_env) and basic auth are both accepted.",
+  "config": {
+    "version": 1,
+    "platforms": {
+      "h": {
+        "base_url": "https://host.internal",
+        "auth": { "type": "header", "name": "X-Api-Key", "secret_env": "API_KEY" },
+        "operations": [{ "name": "ping", "description": "Ping.", "method": "GET", "path": "/ping" }]
+      },
+      "b": {
+        "base_url": "https://other.internal",
+        "auth": { "type": "basic", "username_env": "USER", "password_env": "PASS" },
+        "operations": [{ "name": "ping", "description": "Ping.", "method": "GET", "path": "/ping" }]
+      }
+    }
+  }
+}

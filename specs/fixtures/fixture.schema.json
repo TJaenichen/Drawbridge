@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drawbridge.dev/schema/fixture.v1.json",
+  "title": "Drawbridge golden conformance fixture (v1)",
+  "description": "Shape of a conformance fixture. Both language runners validate fixtures against this before executing them, so the fixture format is itself a shared contract (not just prose).",
+  "type": "object",
+  "required": ["$kind", "description"],
+  "additionalProperties": false,
+  "properties": {
+    "$kind": { "enum": ["tools", "request", "config_valid", "config_invalid"] },
+    "description": { "type": "string", "minLength": 1 },
+    "env": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Env used to resolve ${VAR}. Secrets use dummy values."
+    },
+    "config": { "type": "object", "description": "Inline config." },
+    "config_ref": { "type": "string", "description": "Path to a shared config, relative to this fixture." },
+    "expected_tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "input_schema"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "input_schema": { "type": "object" }
+        }
+      }
+    },
+    "tool_call": {
+      "type": "object",
+      "required": ["name", "arguments"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "arguments": { "type": "object" }
+      }
+    },
+    "expected_request": {
+      "type": "object",
+      "required": ["method", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "path": { "type": "string" },
+        "query": { "type": "object", "description": "Compared as a set of key/value pairs." },
+        "headers": { "type": "object", "description": "Compared as a set; auth header excluded." },
+        "auth_header": { "type": "string", "description": "Auth header name; presence asserted, value never compared." },
+        "body": { "description": "Deep-equal JSON body." }
+      }
+    },
+    "expected_result": { "description": "Deep-equal expected result object." },
+    "expected_error": {
+      "type": "object",
+      "required": ["status", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "integer" },
+        "outcome": { "enum": ["ok", "client_error", "server_error", "timeout", "refused"] },
+        "message_contains": { "type": "string", "description": "Optional substring assertion on the (redacted) message." }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "For config_invalid: how the config schema should reject it.",
+      "properties": {
+        "pointer": { "type": "string", "description": "JSON pointer (instancePath) of the expected failure." },
+        "message_contains": { "type": "string" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "$kind": { "enum": ["tools", "request", "config_valid"] } } },
+      "then": { "oneOf": [{ "required": ["config"] }, { "required": ["config_ref"] }] }
+    },
+    {
+      "if": { "properties": { "$kind": { "const": "tools" } } },
+      "then": { "required": ["expected_tools"] }
+    },
+    {
+      "if": { "properties": { "$kind": { "const": "request" } } },
+      "then": {
+        "required": ["tool_call", "expected_request"],
+        "oneOf": [{ "required": ["expected_result"] }, { "required": ["expected_error"] }]
+      }
+    },
+    {
+      "if": { "properties": { "$kind": { "const": "config_invalid" } } },
+      "then": { "required": ["config", "expected"] }
+    }
+  ]
+}
