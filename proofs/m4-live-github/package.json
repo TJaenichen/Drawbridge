@@ -1,0 +1,6 @@
+{
+  "name": "m4-live-github",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.0.0" }
+}

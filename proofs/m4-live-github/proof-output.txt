@@ -1,0 +1,14 @@
+== github_create_issue ==
+created #1: Drawbridge live-call proof
+url: https://github.com/TJaenichen/Drawbridge/issues/1
+state: open
+
+== github_get_issue #1 ==
+#1 Drawbridge live-call proof — open
+
+== github_list_issues (state=open) ==
+#1 Drawbridge live-call proof — open
+
+(note: in the original create→get→list run the list came back empty due to GitHub's
+brief create-then-list consistency lag; a read-only re-list a few seconds later — via
+relist.mjs — shows #1, as above. create + get both returned live data immediately.)
