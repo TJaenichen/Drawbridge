@@ -1,5 +1,7 @@
 # Drawbridge
 
+[![CI](https://github.com/TJaenichen/Drawbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/TJaenichen/Drawbridge/actions/workflows/ci.yml)
+
 **A declarative, secure bridge that lets cloud AI agents reach the APIs inside your private network — on your terms.**
 
 > You've got a moat. Drawbridge is how the agent crosses it: lowered deliberately,
