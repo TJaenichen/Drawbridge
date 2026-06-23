@@ -75,10 +75,16 @@ Then run it against a real API — see [`demo/`](demo) (GitHub, or Gitea via Doc
 
 ## Status
 
-**v1 complete.** Both implementations are built, tested, and proven at parity:
+**v1 complete; v2 in progress.** Both implementations are built, tested, and proven at parity:
 
-- **Node** (`src/node`) — 58 tests (`corepack pnpm test`); **76% mutation score** (StrykerJS).
-- **.NET** (`src/dotnet`) — 20 conformance + 26 unit tests (`dotnet test`); **61% mutation score** (Stryker.NET).
+- **Node** (`src/node`) — 82 tests (`corepack pnpm test`); **76% mutation score** (StrykerJS).
+- **.NET** (`src/dotnet`) — 20 conformance + 32 unit tests (`dotnet test`); **61% mutation score** (Stryker.NET).
+
+**v2 so far:** a **default audit-file path** (`~/.drawbridge/audit.jsonl`, both languages)
+and the **React monitor** — `drawbridge monitor`, a loopback-only, read-only dashboard
+that tails the audit log and streams it live over SSE (the React artifact of the
+showcase). See [`proofs/m6-default-audit-path`](proofs/m6-default-audit-path) and
+[`proofs/m7-monitor`](proofs/m7-monitor) (with screenshots).
 - **Shared golden fixtures** (`specs/fixtures`) run in *both* languages — tool
   generation, request building, config validation, and OpenAPI generation all compared
   structurally (DESIGN §13).
@@ -87,8 +93,8 @@ Then run it against a real API — see [`demo/`](demo) (GitHub, or Gitea via Doc
   structurally identical results); generator parity; demo configs.
 - **Demos** (`demo/`): GitHub (reproducible) and Gitea (private-network, Docker).
 
-Deferred to v2 (see DESIGN §21): the React monitor, response field-filtering, OAuth,
-the `raw_request` escape hatch, and per-user identity.
+Deferred (see DESIGN §21): response field-filtering, OAuth, the `raw_request` escape
+hatch, per-user identity, and audit-log rotation.
 
 ## Security model (sketch)
 

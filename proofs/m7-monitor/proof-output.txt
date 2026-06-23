@@ -1,0 +1,7 @@
+monitor up at http://127.0.0.1:4738 (tailing <temp>\audit.jsonl)
+after 5 calls: feed shows 5 requests; refusal + error rows are highlighted.
+after 1 more call (no page reload): feed updated live to 6 requests.
+cards — ok: 4, refused: 1, errors: 1; connection: live
+
+RESULT: PASS — the monitor tailed the audit log and rendered a live, read-only dashboard.
+screenshots: .\dashboard.png, .\dashboard-live.png

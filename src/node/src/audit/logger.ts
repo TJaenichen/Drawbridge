@@ -1,6 +1,7 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
+import { resolveAuditFile } from "../paths.js";
 import type { ExecResult, Outcome } from "../exec/executor.js";
 
 export interface AuditRecord {
@@ -52,25 +53,6 @@ export function buildRecord(
     bytes: result.bytes,
     request_id: clock.uuid(),
   };
-}
-
-/** The audit file's location, relative to the user's home dir, when no override is set. */
-export const DEFAULT_AUDIT_DIR = ".drawbridge";
-export const DEFAULT_AUDIT_FILENAME = "audit.jsonl";
-
-/**
- * Resolve the audit file path: `DRAWBRIDGE_AUDIT_FILE` wins; otherwise the default
- * `~/.drawbridge/audit.jsonl` (uniform across OSes — the monitor's zero-config
- * rendezvous file, DESIGN §10/§11). Pure: `home` is injected for tests/parity.
- */
-export function resolveAuditFile(
-  env: Record<string, string | undefined> = process.env,
-  home: string = homedir(),
-): string {
-  // An empty/whitespace override (e.g. `DRAWBRIDGE_AUDIT_FILE=$UNSET`) means "use the default".
-  const override = env.DRAWBRIDGE_AUDIT_FILE;
-  if (override && override.trim() !== "") return override;
-  return join(home, DEFAULT_AUDIT_DIR, DEFAULT_AUDIT_FILENAME);
 }
 
 /**

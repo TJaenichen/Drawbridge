@@ -58,7 +58,7 @@ Two processes that rendezvous via the **audit log file**:
                     └──────────────────────────────────────────────────────────────────┼────────┘
                                                                                          │ tail
                     ┌──────────────────────── drawbridge monitor (loopback) ────────────▼────────┐
- Browser <-127.0.0.1│ Read-only web server + WebSocket → React dashboard          [PROPOSED §11] │
+ Browser <-127.0.0.1│ Read-only web server + SSE → React dashboard                       [§11] │
                     └────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -230,24 +230,41 @@ tool-approval UI for write operations; Drawbridge reserves an optional per-opera
     for v2 (§21).
 - This log is the data source for the monitor (§11).
 
-## 11. Monitor (React) — [v2]
+## 11. Monitor (React) — [v2, building]
 
-Deferred to v2 so M0–M4 + OpenAPI generation land first. Note: this is the React
-artifact for the Slalom showcase, so v1 proves TS+C# parity but the *React* piece
-arrives with the monitor. Planned shape (v2), designed to keep §12 (stdio-only) intact:
+The React artifact of the showcase: v1 proves TS+C# parity; the *React* piece arrives
+with the monitor. Shape (designed to keep §12 stdio-only intact):
 
-- A separate subcommand — `drawbridge monitor` — starts a **loopback-only
-  (127.0.0.1) read-only** web server that serves a Vite/React dashboard and streams
-  audit events over a WebSocket by **tailing the JSONL audit log**.
-- Loopback-only does not violate the "no inbound on the private network" invariant
-  (it is local to the operator's machine).
+- A separate subcommand — `drawbridge monitor [--port 4737] [--audit-file <path>]` —
+  starts a **loopback-only (127.0.0.1) read-only** web server that serves a Vite/React
+  dashboard and streams audit events by **tailing the JSONL audit log**.
+- **Transport: Server-Sent Events (SSE).** The data flow is purely one-way
+  (server → browser), so SSE is the simplest fit — HTTP-native, no extra dependency,
+  auto-reconnecting — and it reinforces the read-only story (the browser never sends
+  anything but the initial GET). On connect the stream replays a recent backlog, then
+  pushes each new record as it is tailed. *(Earlier drafts said "WebSocket"; SSE is the
+  chosen mechanism for a one-way stream.)*
+- **React-only / Node-only.** Unlike every other component, the monitor is **not**
+  mirrored in .NET — it is a browser/React artifact (see §3). This is the one documented
+  exception to the two-language rule; the TS↔C# parity contract (§13) is unaffected.
+- **Read-only & loopback.** The server exposes **GET only** — it never writes the audit
+  file, never calls the MCP server, never reads the secret-bearing config. It only
+  streams the already-redacted audit JSONL (§10), which carries no secrets or bodies.
+  Binding to 127.0.0.1 (not 0.0.0.0) does not violate "no inbound on the private
+  network" — it is local to the operator's machine. It MUST never be exposed beyond
+  loopback (single-user laptop model, §8.4); no auth in v1.
+- **Hardening (in code, not just docs):** binds 127.0.0.1 only (no `--host`); rejects any
+  non-loopback `Host` header (defeats DNS-rebinding from a page the operator has open);
+  static serving is confined to the asset root both lexically and after resolving
+  symlinks (`realpath`); concurrent SSE clients are capped; and the tailer bounds its
+  per-poll read and drops any single line over 1 MiB (a local OOM guard).
 - The MCP server (stdio) and the monitor never talk directly — they rendezvous only
   through the audit-log file, so the security-critical process stays minimal. The
   rendezvous location is the **default audit-file path** (§10) — both default to
   `~/.drawbridge/audit.jsonl`, so the monitor finds the log with no configuration.
-  *(Delivered: the default path landed first, ahead of the monitor itself.)*
-- Dashboard v1: live request feed, per-operation counts, error/refusal highlighting,
-  latency. (Confirm scope/v1 in §19.)
+- **Dashboard v1 scope:** live request feed (newest first), per-operation counts,
+  error/refusal highlighting, latency (`duration_ms`). No history/DB, search, auth, or
+  rotation in v1 (YAGNI). Proven with Playwright screenshots (`proofs/m7-monitor`).
 
 ## 12. MCP surface
 
@@ -400,4 +417,6 @@ from Plan (CLAUDE.md §4).
 React monitor (§11) · response field filtering · OAuth · `raw_request` · per-user
 identity & attribution · server-side write confirmation · pagination · non-JSON
 content types · remote/HTTP transport · request/response body logging · hot-reload ·
-config includes/imports · audit-log rotation/retention + an explicit stderr-only opt-out.
+config includes/imports · audit-log rotation/retention + an explicit stderr-only opt-out ·
+bundling the built monitor UI into the published npm package (a `prepack` step copies
+`monitor-ui/dist` beside `dist`/`schema`; `findUiDir` already looks for a bundled `ui/`).

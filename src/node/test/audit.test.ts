@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { loadConfig } from "../src/config/loader.js";
 import { generateTools } from "../src/tools/generator.js";
 import { execute } from "../src/exec/executor.js";
-import { type Clock, buildRecord, defaultSink, resolveAuditFile, writeAudit } from "../src/audit/logger.js";
+import { type Clock, buildRecord, defaultSink, writeAudit } from "../src/audit/logger.js";
+import { resolveAuditFile } from "../src/paths.js";
 
 const fixedClock: Clock = { isoNow: () => "2026-01-01T00:00:00.000Z", uuid: () => "fixed-id" };
 

@@ -6,6 +6,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { loadConfigFile } from "./config/loader.js";
 import { createServer } from "./mcp/server.js";
 import { generateConfig } from "./generate/openapi.js";
+import { startMonitor } from "./monitor/server.js";
+import { resolveAuditFile } from "./paths.js";
 import { ConfigError } from "./model.js";
 
 function arg(flag: string): string | undefined {
@@ -29,9 +31,26 @@ function runGenerate(): void {
   process.stderr.write("drawbridge: draft config generated — review and prune before exposing.\n");
 }
 
+async function runMonitor(): Promise<void> {
+  const portArg = arg("--port");
+  const port = portArg ? Number(portArg) : 4737;
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    process.stderr.write(`drawbridge monitor: invalid --port ${portArg} (expected 1-65535)\n`);
+    process.exit(2);
+  }
+  const auditFile = arg("--audit-file") ?? resolveAuditFile(process.env);
+  const monitor = await startMonitor({ auditFile, port });
+  const addr = monitor.address();
+  process.stderr.write(`drawbridge monitor: http://${addr.host}:${addr.port} (read-only, tailing ${auditFile})\n`);
+}
+
 async function main(): Promise<void> {
   if (process.argv.includes("generate")) {
     runGenerate();
+    return;
+  }
+  if (process.argv.includes("monitor")) {
+    await runMonitor();
     return;
   }
   const configPath = arg("--config");

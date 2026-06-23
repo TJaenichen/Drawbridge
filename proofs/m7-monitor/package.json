@@ -1,0 +1,13 @@
+{
+  "name": "drawbridge-proof-m7-monitor",
+  "private": true,
+  "type": "module",
+  "description": "Proof that the drawbridge monitor renders a live read-only dashboard by tailing the audit log",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "playwright": "^1.49.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}
