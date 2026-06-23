@@ -5,8 +5,8 @@ Pick-up document for continuing in a fresh session. Read this, then `CLAUDE.md`
 
 - **Repo:** https://github.com/TJaenichen/Drawbridge (public, MIT)
 - **State as of this handover:** v1 complete + hardened (CI + mutation testing), **plus
-  v2 slice 1 shipped** (default audit-file path — see §8). Latest commit `8252844` on
-  `main`. Working tree clean.
+  v2 slices 1–2 shipped** (default audit-file path + the React monitor — see §8). Latest
+  commit `c8554a2` on `main`. Working tree clean.
 - **Local path:** `D:\work\Drawbridge`
 
 ---
@@ -32,7 +32,7 @@ not tied to any job/pitch).
 | | Node (TS) | .NET (C#) |
 |---|---|---|
 | Location | `src/node` | `src/dotnet` |
-| Tests | 63 (`corepack pnpm test`) | 20 conformance + 32 unit (`dotnet test`) |
+| Tests | 82 (`corepack pnpm test`) | 20 conformance + 32 unit (`dotnet test`) |
 | Mutation score | **76.4%** StrykerJS | **61.4%** Stryker.NET |
 | Runtime | MCP stdio server (official SDK) | MCP stdio server (hand-rolled JSON-RPC) |
 | Distribution target | `npx -y drawbridge-mcp` | self-contained binary |
@@ -216,18 +216,21 @@ Parking lot (DESIGN §21), rough value order for the showcase:
    `~/.drawbridge/audit.jsonl` when `DRAWBRIDGE_AUDIT_FILE` is unset (the monitor's
    zero-config rendezvous file). Commit `8252844`, proof `proofs/m6-default-audit-path`.
    This was the monitor's prerequisite — **the monitor can now be built directly.**
-1. **React monitor** (DESIGN §11) — **next up**; the headline v2 add and the *React
-   artifact* v1 lacks. A separate `drawbridge monitor` subcommand: a **loopback-only
-   (127.0.0.1) read-only** web server that serves a Vite/React dashboard and streams audit
-   events over a WebSocket by **tailing the JSONL audit log** (now at the default path
-   above). The MCP server (stdio) and the monitor never talk directly — they rendezvous
-   only via the audit-log file.
-   - Dashboard: live request feed, per-operation counts, error/refusal highlighting,
-     latency. Prove with Playwright screenshots (`proofs/`).
-   - Open design choices to settle first: which package owns the monitor (Node-only —
-     React is JS), bundling/build story, and how `resolveAuditFile` is shared (when the
-     monitor lands, consider moving it from `audit/logger.ts` to `paths.ts` — see the
-     architecture review note).
+1. **✅ DONE — React monitor (v2 slice 2).** `drawbridge monitor` — a loopback-only,
+   read-only web server (`src/node/src/monitor/{tail,server}.ts`, subcommand in
+   `index.ts`) that tails the default audit log and streams it **live over SSE** to a
+   Vite/React dashboard (`src/node/monitor-ui/`, built to `monitor-ui/dist`). Live feed,
+   per-op counts, error/refusal highlighting, latency. React-only/Node-only (documented
+   parity exemption, §3). Commit `c8554a2`, proof `proofs/m7-monitor` (Playwright
+   screenshots). `resolveAuditFile` now lives in `paths.ts` (shared by sink + monitor).
+   - **Run it:** `node src/node/dist/index.js monitor` (defaults to port 4737 + the
+     default audit file). Build the UI first: `cd src/node/monitor-ui && corepack pnpm
+     install && corepack pnpm build`.
+   - **Open follow-up (parked, §21):** the published npm package does **not** yet bundle
+     `monitor-ui/dist`, so `npx drawbridge-mcp monitor` would serve the built-in fallback
+     page, not the React UI. `findUiDir()` already looks for a bundled `ui/` dir; a
+     `prepack` step should build monitor-ui and copy its `dist` → `ui/` (mirror
+     `copy-schema.mjs`) and add `ui` to `package.json` `files`. Not needed until publish.
 2. **Response field-filtering** — the `returns.fields` exfiltration control (already
    schema-reserved, specced §9, not enforced in v1).
 3. **OAuth** auth type (schema reserves it; §7).
