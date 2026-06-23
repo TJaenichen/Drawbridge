@@ -1,0 +1,9 @@
+{
+  "name": "drawbridge-proof-m6-default-audit-path",
+  "private": true,
+  "type": "module",
+  "description": "Proof that both servers write audit JSONL to the default ~/.drawbridge/audit.jsonl with zero config",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

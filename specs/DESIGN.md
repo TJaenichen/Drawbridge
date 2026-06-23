@@ -211,9 +211,23 @@ tool-approval UI for write operations; Drawbridge reserves an optional per-opera
   `error` covers build/transport failures (bad argument, connection refused, a status
   outside 2xx/4xx/5xx). **No secrets, no request/response bodies in v1** (bodies are
   [v2], opt-in).
-- **Destination:** **stderr by default**; also appends to a file when
-  `DRAWBRIDGE_AUDIT_FILE` is set. **Never stdout** — stdout is reserved for the MCP
-  protocol. (A platform-default file path arrives with the v2 monitor, §11.)
+- **Destination:** **stderr always**, *plus* an append-only JSONL file. **Never
+  stdout** — stdout is reserved for the MCP protocol. The file path is:
+  - `DRAWBRIDGE_AUDIT_FILE` when set (explicit override; wins), else
+  - **[v2] a default path** — `~/.drawbridge/audit.jsonl` (the user's home dir +
+    `.drawbridge/`, uniform across OSes for parity and discoverability). The parent
+    directory is created if missing. This default is what lets the monitor (§11) tail
+    a known location with **zero configuration**.
+  - **Graceful degradation:** if the file can't be created or written (e.g. a
+    read-only home dir), Drawbridge logs a one-time warning to stderr and continues
+    **stderr-only** — a failing audit file must never take down the MCP server.
+  - **Permissions & disclosure:** the file is created owner-only (`0600`, dir `0700`)
+    on Unix (ignored on Windows, where the user-profile dir is already user-scoped).
+    The effective destination is announced once on stderr at startup
+    (`drawbridge: audit -> <path>`).
+  - **Retention:** the file is append-only with **no rotation or size cap in v1** — it
+    grows unbounded; rotation/retention and an explicit stderr-only opt-out are parked
+    for v2 (§21).
 - This log is the data source for the monitor (§11).
 
 ## 11. Monitor (React) — [v2]
@@ -228,7 +242,10 @@ arrives with the monitor. Planned shape (v2), designed to keep §12 (stdio-only)
 - Loopback-only does not violate the "no inbound on the private network" invariant
   (it is local to the operator's machine).
 - The MCP server (stdio) and the monitor never talk directly — they rendezvous only
-  through the audit-log file, so the security-critical process stays minimal.
+  through the audit-log file, so the security-critical process stays minimal. The
+  rendezvous location is the **default audit-file path** (§10) — both default to
+  `~/.drawbridge/audit.jsonl`, so the monitor finds the log with no configuration.
+  *(Delivered: the default path landed first, ahead of the monitor itself.)*
 - Dashboard v1: live request feed, per-operation counts, error/refusal highlighting,
   latency. (Confirm scope/v1 in §19.)
 
@@ -347,6 +364,11 @@ name are asserted separately.
    override; truncate beyond with a `"truncated": true` notice.
 4. **Parity (§13).** **Structural/semantic equivalence, not byte-identical** — same
    objects and values; field order, whitespace, and formatting are out of scope.
+5. **Default audit path (§10) — [v2, shipped].** When `DRAWBRIDGE_AUDIT_FILE` is unset,
+   audit JSONL appends to `~/.drawbridge/audit.jsonl` (uniform across OSes; dir created
+   if missing), degrading to stderr-only on write failure. Built first in v2 as the
+   monitor's (§11) zero-config rendezvous file. Both languages resolve the path
+   identically (home dir + `.drawbridge/audit.jsonl`).
 
 ## 20. Proof obligations
 
@@ -378,4 +400,4 @@ from Plan (CLAUDE.md §4).
 React monitor (§11) · response field filtering · OAuth · `raw_request` · per-user
 identity & attribution · server-side write confirmation · pagination · non-JSON
 content types · remote/HTTP transport · request/response body logging · hot-reload ·
-config includes/imports.
+config includes/imports · audit-log rotation/retention + an explicit stderr-only opt-out.

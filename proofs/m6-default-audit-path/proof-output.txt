@@ -1,0 +1,28 @@
+
+================  Node / TypeScript  ================
+default audit file: <temp-home>\.drawbridge\audit.jsonl
+exists: true   records: 4
+secret "proof-token-123" present in audit file: false  (must be false)
+records (operation / method / status / outcome):
+  - create_work_item  POST  201  ok
+  - list_work_items  GET  200  ok
+  - get_work_item  GET  200  ok
+  - internal_tracker_delete_everything  -  0  refused
+
+================  .NET / C#  ================
+default audit file: <temp-home>\.drawbridge\audit.jsonl
+exists: true   records: 4
+secret "proof-token-123" present in audit file: false  (must be false)
+records (operation / method / status / outcome):
+  - create_work_item  POST  201  ok
+  - list_work_items  GET  200  ok
+  - get_work_item  GET  200  ok
+  - internal_tracker_delete_everything  -  0  refused
+
+================  cross-language parity (§13)  ================
+Node / TypeScript sequence: create_work_item:ok, list_work_items:ok, get_work_item:ok, internal_tracker_delete_everything:refused
+.NET / C# sequence: create_work_item:ok, list_work_items:ok, get_work_item:ok, internal_tracker_delete_everything:refused
+identical (operation:outcome) sequence: true
+refused (undeclared) tool audited as outcome "refused" in both: true
+
+RESULT: PASS — both languages defaulted to ~/.drawbridge/audit.jsonl, 4 audited records each, no secret, identical sequence.
