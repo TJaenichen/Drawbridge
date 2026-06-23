@@ -4,8 +4,9 @@ Pick-up document for continuing in a fresh session. Read this, then `CLAUDE.md`
 (how we work) and `specs/DESIGN.md` (the spec / source of truth).
 
 - **Repo:** https://github.com/TJaenichen/Drawbridge (public, MIT)
-- **State as of this handover:** v1 complete + hardened (CI + mutation testing). Latest
-  commit `4b2f601` on `main`. Working tree clean.
+- **State as of this handover:** v1 complete + hardened (CI + mutation testing), **plus
+  v2 slice 1 shipped** (default audit-file path — see §8). Latest commit `8252844` on
+  `main`. Working tree clean.
 - **Local path:** `D:\work\Drawbridge`
 
 ---
@@ -31,7 +32,7 @@ not tied to any job/pitch).
 | | Node (TS) | .NET (C#) |
 |---|---|---|
 | Location | `src/node` | `src/dotnet` |
-| Tests | 58 (`corepack pnpm test`) | 20 conformance + 26 unit (`dotnet test`) |
+| Tests | 63 (`corepack pnpm test`) | 20 conformance + 32 unit (`dotnet test`) |
 | Mutation score | **76.4%** StrykerJS | **61.4%** Stryker.NET |
 | Runtime | MCP stdio server (official SDK) | MCP stdio server (hand-rolled JSON-RPC) |
 | Distribution target | `npx -y drawbridge-mcp` | self-contained binary |
@@ -190,8 +191,10 @@ node src/node/dist/index.js generate --from specs/openapi.example.yaml --platfor
 - **Generator output is JSON** (not commented YAML); unsupported OpenAPI constructs
   **coerce to `type: string`** in the draft (documented, human prunes). `snake()`
   always yields a valid identifier; relative server URLs → `${BASE_URL}` sentinel.
-- **Audit → stderr by default** (never stdout); file only if `DRAWBRIDGE_AUDIT_FILE` set.
-  **No default file path in v1** — deferred to the v2 monitor (see §8 below).
+- **Audit → stderr always**, plus a file: `DRAWBRIDGE_AUDIT_FILE` if set, else the **default
+  `~/.drawbridge/audit.jsonl`** (v2 slice 1 — created if missing, owner-only perms, degrades
+  to stderr-only on write failure). Both languages resolve home identically (USERPROFILE on
+  Windows, HOME on Unix). See `proofs/m6-default-audit-path`.
 - **Audit `outcome` enum** includes `error` (build/transport failures) beyond the 4 HTTP
   outcomes + `timeout`/`refused`.
 - Full decision log: DESIGN.md §19 + the five review-panel passes (M0/M1/M3 + final),
@@ -209,17 +212,22 @@ node src/node/dist/index.js generate --from specs/openapi.example.yaml --platfor
 
 Parking lot (DESIGN §21), rough value order for the showcase:
 
-1. **React monitor** (DESIGN §11) — the headline v2 add and the *React artifact* v1 lacks.
-   A separate `drawbridge monitor` subcommand: a **loopback-only (127.0.0.1) read-only**
-   web server that serves a Vite/React dashboard and streams audit events over a
-   WebSocket by **tailing the JSONL audit log**. The MCP server (stdio) and the monitor
-   never talk directly — they rendezvous only via the audit-log file.
-   - **Prerequisite (do this first):** establish a **default audit-file path** in both
-     languages (e.g. an OS-appropriate data dir like `~/.drawbridge/audit.jsonl`), so the
-     server and monitor rendezvous without requiring `DRAWBRIDGE_AUDIT_FILE` to be set
-     manually. Today there is no default file (logs go to stderr only) — see §5/§7.
+0. **✅ DONE — default audit-file path (v2 slice 1).** Both languages default to
+   `~/.drawbridge/audit.jsonl` when `DRAWBRIDGE_AUDIT_FILE` is unset (the monitor's
+   zero-config rendezvous file). Commit `8252844`, proof `proofs/m6-default-audit-path`.
+   This was the monitor's prerequisite — **the monitor can now be built directly.**
+1. **React monitor** (DESIGN §11) — **next up**; the headline v2 add and the *React
+   artifact* v1 lacks. A separate `drawbridge monitor` subcommand: a **loopback-only
+   (127.0.0.1) read-only** web server that serves a Vite/React dashboard and streams audit
+   events over a WebSocket by **tailing the JSONL audit log** (now at the default path
+   above). The MCP server (stdio) and the monitor never talk directly — they rendezvous
+   only via the audit-log file.
    - Dashboard: live request feed, per-operation counts, error/refusal highlighting,
      latency. Prove with Playwright screenshots (`proofs/`).
+   - Open design choices to settle first: which package owns the monitor (Node-only —
+     React is JS), bundling/build story, and how `resolveAuditFile` is shared (when the
+     monitor lands, consider moving it from `audit/logger.ts` to `paths.ts` — see the
+     architecture review note).
 2. **Response field-filtering** — the `returns.fields` exfiltration control (already
    schema-reserved, specced §9, not enforced in v1).
 3. **OAuth** auth type (schema reserves it; §7).
